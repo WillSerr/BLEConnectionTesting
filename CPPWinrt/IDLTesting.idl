@@ -1,0 +1,50 @@
+//import "oaidl.idl";
+//import "ocidl.idl";
+//
+
+// IDLTesting.idl
+namespace IDLTesting
+{
+    [default_interface]
+    runtimeclass Watcher : Windows.UI.Xaml.Controls.Page
+    {
+        Watcher();
+
+        Windows.Foundation.Collections.IObservableVector<Object> KnownDevices{ get; };
+
+        Windows.UI.Xaml.Controls.ListView ResultsListView{ get; };
+        void EnumerateButton_Click();
+        void PairButton_Click();
+        Boolean Not(Boolean value);
+    }
+    
+    [default_interface]
+    runtimeclass LiteWatcher
+    {
+        LiteWatcher();
+
+        Windows.Foundation.Collections.IObservableVector<Object> KnownDevices{ get; };
+
+        void EnumerateButton_Click();
+        void PairButton_Click();
+        Boolean Not(Boolean value);
+    }
+
+    /// <summary>
+    ///     Display class used to represent a BluetoothLEDevice in the Device list
+    /// </summary>
+    runtimeclass BluetoothLEDeviceDisplay
+    {
+        Windows.Devices.Enumeration.DeviceInformation DeviceInformation{ get; };
+
+        String Id{ get; };
+        String Name{ get; };
+        Boolean IsPaired{ get; };
+        Boolean IsConnected{ get; };
+        Boolean IsConnectable{ get; };
+
+        IMapView<String, Object> Properties{ get; };
+
+        void Update(Windows.Devices.Enumeration.DeviceInformationUpdate deviceInfoUpdate);
+    };
+}

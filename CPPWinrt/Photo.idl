@@ -1,0 +1,22 @@
+//import "oaidl.idl";
+//import "ocidl.idl";
+//
+
+// Photo.idl
+namespace PhotoEditor
+{
+    delegate void RecognitionHandler(Boolean arg); // delegate type, for an event.
+
+    runtimeclass Photo : Windows.UI.Xaml.Data.INotifyPropertyChanged // interface.
+    {
+        Photo(); // constructors.
+        Photo(Windows.Storage.StorageFile imageFile);
+
+        String ImageName{ get; }; // read-only property.
+        Single SepiaIntensity; // read-write property.
+
+        Windows.Foundation.IAsyncAction StartRecognitionAsync(); // (asynchronous) method.
+
+        event RecognitionHandler ImageRecognized; // event.
+    }
+}
