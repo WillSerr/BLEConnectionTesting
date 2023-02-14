@@ -5,6 +5,7 @@
 #include <bluetoothleapis.h>
 #include <future>
 
+#define CYCLE_POWER_MEASURE L"{00002a65-0000-1000-8000-00805f9b34fb}"
 
 using namespace winrt;
 using namespace Windows::Foundation;
@@ -40,12 +41,14 @@ int main()
         for (uint32_t index = 0; index < size; index++)
         {
             auto bleDeviceDisplay = devList.GetAt(index).as<IDLTesting::BluetoothLEDeviceDisplay>();
-            printf("Device Found:\n\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
-            printf("\tID: %ls", bleDeviceDisplay.DeviceInformation().Id().c_str());
-            PrintDevInfoKind(bleDeviceDisplay.DeviceInformation().Kind());
-            printf("\n");
+            
 
             if (bleDeviceDisplay.DeviceInformation().Id() == bikeId) {
+                printf("Device Found:\n\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
+                printf("\tID: %ls", bleDeviceDisplay.DeviceInformation().Id().c_str());
+                PrintDevInfoKind(bleDeviceDisplay.DeviceInformation().Kind());
+                printf("\n");
+
                 if (ConnectDevice(bleDeviceDisplay.DeviceInformation())) { //Sets all vars used in ReadBuffer to target bleDeviceDisplay
                     printf("ConnectDevice Ran Successfully\n");
                     ReadBuffer();   //reads the data in (hopefully)
@@ -130,11 +133,11 @@ bool ConnectDevice(DeviceInformation deviceInfo)
             //get serviceName by converting the service UUID
             hstring ServiceName = to_hstring(serv.Uuid()); //Using hstring instead of std::string coz it works ?W
             
-            printf("Checking Services: %s ", ServiceName);
+            //printf("Checking Services: %ls ", ServiceName.c_str());
 
             //if current servicename matches the input service name / 65520 = 0xFFF0
-            // 0x1826
-            if (ServiceName == L"6182") //ServiceTxtBox.Text)
+            // 0x1826, 0x1818
+            if (ServiceName == L"{00001818-0000-1000-8000-00805f9b34fb}") //ServiceTxtBox.Text)
             {
                 //store the current service
                 currentSelectedService = serv;
@@ -154,19 +157,23 @@ bool ConnectDevice(DeviceInformation deviceInfo)
                         //get CharacteristicName by converting the current characteristic UUID
                         hstring CharacteristicName = to_hstring(chara.Uuid()); //Using hstring instead of std::string coz it works ?W
 
+                        printf("Checking characs: %ls ", CharacteristicName.c_str());
+
                         //if current CharacteristicName matches the input characteristic name / 65524 = 0xFFF4
-                        if (CharacteristicName == L"65524")//CharacteristicsTxtBox.Text)
+                        if (CharacteristicName == CYCLE_POWER_MEASURE)//CharacteristicsTxtBox.Text)
                         {
+                            printf("WE FOUND THE POWER!!! \n");
                             //store the current characteristic
                             currentSelectedCharacteristic = chara;
                             //stop method execution  
                             //done = true;
                             return true;
                         }
+                        printf("\n"); //for printing characs
                     }
                 }
             }
-            printf("\n");
+            //printf("\n"); //for printing servs
         }
     }
     return false;
@@ -186,11 +193,11 @@ void ReadBuffer()
         if (static_cast<uint32_t>(properties) & static_cast<uint32_t>(GattCharacteristicProperties::Read)) //properties.HasFlag(GattCharacteristicProperties::Read)?W
         {
             //read value asynchronously
-            GattReadResult result = currentSelectedCharacteristic.ReadValueAsync(BluetoothCacheMode::Uncached).get(); //Dunno why its Uncached, it just is ?W
+            GattReadResult result = currentSelectedCharacteristic.ReadValueAsync(BluetoothCacheMode::Cached).get(); //Dunno why its Uncached, it just is ?W
             if (result.Status() == GattCommunicationStatus::Success)
             {
                 //result.Value()
-                printf("Data read is: ");
+                //printf("Data read is: ");
                 auto reader = DataReader::FromBuffer(result.Value());
                 reader.ReadBytes(readData);
                 return;// ret;
