@@ -17,7 +17,7 @@ void PrintDevInfoKind(DeviceInformationKind kind);
 bool ConnectDevice(DeviceInformation deviceInfo);
 void ReadBuffer();
 
-hstring bikeId = L"EnterTheIdHere";
+hstring bikeId = L"BluetoothLE#BluetoothLE70:66:55:73:ad:8a-fe:4a:3f:d8:8a:ee";
 array_view<uint8_t> readData;   //This variable is the main point of failure ?w
 
 
@@ -41,7 +41,7 @@ int main()
         {
             auto bleDeviceDisplay = devList.GetAt(index).as<IDLTesting::BluetoothLEDeviceDisplay>();
             printf("Device Found:\n\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
-            printf("\tID: Name: %ls!", bleDeviceDisplay.DeviceInformation().Id().c_str());
+            printf("\tID: %ls", bleDeviceDisplay.DeviceInformation().Id().c_str());
             PrintDevInfoKind(bleDeviceDisplay.DeviceInformation().Kind());
             printf("\n");
 
@@ -130,10 +130,11 @@ bool ConnectDevice(DeviceInformation deviceInfo)
             //get serviceName by converting the service UUID
             hstring ServiceName = to_hstring(serv.Uuid()); //Using hstring instead of std::string coz it works ?W
             
-            printf("Checking Services:");
+            printf("Checking Services: %s ", ServiceName);
 
             //if current servicename matches the input service name / 65520 = 0xFFF0
-            if (ServiceName == L"65520") //ServiceTxtBox.Text)
+            // 0x1826
+            if (ServiceName == L"6182") //ServiceTxtBox.Text)
             {
                 //store the current service
                 currentSelectedService = serv;
