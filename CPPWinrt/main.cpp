@@ -142,64 +142,67 @@ bool ConnectDevice(DeviceInformation deviceInfo)
      BluetoothLEDevice bluetoothLeDevice = BluetoothLEDevice::FromIdAsync(deviceInfo.Id()).get(); //no longer async but who cares ?W
     //Respond(bluetoothLeDevice.ConnectionStatus.ToString());
 
-    //get its services
-    GattDeviceServicesResult result = bluetoothLeDevice.GetGattServicesAsync().get(); //no longer async but who cares ?W
+     if (bluetoothLeDevice != NULL) {
 
-    //verify if getting success 
-    if (result.Status() == GattCommunicationStatus::Success)
-    {
-        //store device services to list
-        services = result.Services();
+         //get its services
+         GattDeviceServicesResult result = bluetoothLeDevice.GetGattServicesAsync().get(); //no longer async but who cares ?W
 
-        //loop each services in list
-        for(auto serv : services)
-        {
-            //get serviceName by converting the service UUID
-            hstring ServiceName = to_hstring(serv.Uuid()); //Using hstring instead of std::string coz it works ?W
-            
-            //printf("Checking Services: %ls ", ServiceName.c_str());
+         //verify if getting success 
+         if (result.Status() == GattCommunicationStatus::Success)
+         {
+             //store device services to list
+             services = result.Services();
 
-            //if current servicename matches the input service name / 65520 = 0xFFF0
-            // 0x1826, 0x1818
-            if (ServiceName == L"{00001818-0000-1000-8000-00805f9b34fb}") //ServiceTxtBox.Text)
-            {
-                //store the current service
-                currentSelectedService = serv;
+             //loop each services in list
+             for (auto serv : services)
+             {
+                 //get serviceName by converting the service UUID
+                 hstring ServiceName = to_hstring(serv.Uuid()); //Using hstring instead of std::string coz it works ?W
 
-                //get the current service characteristics
-                GattCharacteristicsResult resultCharacterics = serv.GetCharacteristicsAsync().get();//no longer async but who cares ?W
+                 //printf("Checking Services: %ls ", ServiceName.c_str());
 
-                //verify if getting characteristics is success 
-                if (resultCharacterics.Status() == GattCommunicationStatus::Success)
-                {
-                    //store device services to list
-                    characteristics = resultCharacterics.Characteristics();
+                 //if current servicename matches the input service name / 65520 = 0xFFF0
+                 // 0x1826, 0x1818
+                 if (ServiceName == L"{00001818-0000-1000-8000-00805f9b34fb}") //ServiceTxtBox.Text)
+                 {
+                     //store the current service
+                     currentSelectedService = serv;
 
-                    //loop through its characteristics
-                    for(auto chara : characteristics)
-                    {
-                        //get CharacteristicName by converting the current characteristic UUID
-                        hstring CharacteristicName = to_hstring(chara.Uuid()); //Using hstring instead of std::string coz it works ?W
+                     //get the current service characteristics
+                     GattCharacteristicsResult resultCharacterics = serv.GetCharacteristicsAsync().get();//no longer async but who cares ?W
 
-                        printf("Checking characs: %ls ", CharacteristicName.c_str());
+                     //verify if getting characteristics is success 
+                     if (resultCharacterics.Status() == GattCommunicationStatus::Success)
+                     {
+                         //store device services to list
+                         characteristics = resultCharacterics.Characteristics();
 
-                        //if current CharacteristicName matches the input characteristic name / 65524 = 0xFFF4
-                        if (CharacteristicName == CYCLE_POWER_MEASURE)//CharacteristicsTxtBox.Text)
-                        {
-                            printf("WE FOUND THE POWER!!! \n");
-                            //store the current characteristic
-                            currentSelectedCharacteristic = chara;
-                            //stop method execution  
-                            //done = true;
-                            return true;
-                        }
-                        printf("\n"); //for printing characs
-                    }
-                }
-            }
-            //printf("\n"); //for printing servs
-        }
-    }
+                         //loop through its characteristics
+                         for (auto chara : characteristics)
+                         {
+                             //get CharacteristicName by converting the current characteristic UUID
+                             hstring CharacteristicName = to_hstring(chara.Uuid()); //Using hstring instead of std::string coz it works ?W
+
+                             printf("Checking characs: %ls ", CharacteristicName.c_str());
+
+                             //if current CharacteristicName matches the input characteristic name / 65524 = 0xFFF4
+                             if (CharacteristicName == CYCLE_POWER_MEASURE)//CharacteristicsTxtBox.Text)
+                             {
+                                 printf("WE FOUND THE POWER!!! \n");
+                                 //store the current characteristic
+                                 currentSelectedCharacteristic = chara;
+                                 //stop method execution  
+                                 //done = true;
+                                 return true;
+                             }
+                             printf("\n"); //for printing characs
+                         }
+                     }
+                 }
+                 //printf("\n"); //for printing servs
+             }
+         }
+     }
     return false;
 }
 
@@ -222,8 +225,10 @@ void ReadBuffer()
             {
                 //result.Value()
                 //printf("Data read is: ");
-                auto reader = DataReader::FromBuffer(result.Value());
-                reader.ReadBytes(readData);
+                /*auto reader = DataReader::FromBuffer(result.Value());
+                reader.ReadBytes(readData);*/
+                printf("Data read Length: %u \n", result.Value().Length());
+                printf("Data read: %u", result.Value());
                 return;// ret;
             }
             return;// null;
@@ -244,7 +249,12 @@ void testSuite(Tests type, GattReadResult data) {
     if (type == Tests::DotDataTest) {
         auto reader = DataReader::FromBuffer(data.Value());
         reader.ReadBytes(readData);
-        printf("Data read: %u", readData.data());
+        if (!readData.empty()) {
+            printf("Data read: %u", readData.data());
+        }
+        else {
+            printf("Data read: Empty");
+        }
     }
     if (type == Tests::CheckBKCMSize) {
         printf("Data read: %u", data.Value().Length());
