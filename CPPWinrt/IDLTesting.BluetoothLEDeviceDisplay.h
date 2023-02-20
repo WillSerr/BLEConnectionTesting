@@ -2,11 +2,15 @@
 #include "IDLTesting.BluetoothLEDeviceDisplay.g.h"
 
 
+using namespace winrt::Windows::Devices::Bluetooth;
+using namespace winrt::Windows::Devices::Bluetooth::GenericAttributeProfile;
+
 namespace winrt::IDLTesting::implementation
 {
     struct BluetoothLEDeviceDisplay : BluetoothLEDeviceDisplayT<BluetoothLEDeviceDisplay>
     {
         BluetoothLEDeviceDisplay(Windows::Devices::Enumeration::DeviceInformation const& deviceInfoIn);
+        ~BluetoothLEDeviceDisplay();
 
         Windows::Devices::Enumeration::DeviceInformation DeviceInformation()
         {
@@ -45,10 +49,16 @@ namespace winrt::IDLTesting::implementation
 
         void Update(Windows::Devices::Enumeration::DeviceInformationUpdate const& deviceInfoUpdate);
 
+
+        void NotifyOnCharacteristicChange(winrt::Windows::Devices::Bluetooth::GenericAttributeProfile::GattCharacteristic const& sender);
         //void PropertyChanged(event_token const& token) noexcept;
 
     private:
         Windows::Devices::Enumeration::DeviceInformation m_deviceInformation{ nullptr };
+        fire_and_forget characteristicNotification(GattCharacteristic sender,
+            GattValueChangedEventArgs args);
+        event_token NotifyToken;
+        winrt::Windows::Devices::Bluetooth::GenericAttributeProfile::GattCharacteristic const* currentSubscribedCharacteristic;
         //event<Windows::UI::Xaml::Data::PropertyChangedEventHandler> m_propertyChanged;
 
         //void OnPropertyChanged(param::hstring const& property);

@@ -5,7 +5,10 @@
 #include <bluetoothleapis.h>
 #include <future>
 
-#define CYCLE_POWER_MEASURE L"{00002a65-0000-1000-8000-00805f9b34fb}"
+#define CYCLE_POWER_FEATURE L"{00002a65-0000-1000-8000-00805f9b34fb}"
+#define CYCLE_POWER_MEASURE L"{00002a63-0000-1000-8000-00805f9b34fb}"
+#define CYCLING_POWER_SERVICE L"{00001818-0000-1000-8000-00805f9b34fb}"
+
 #define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
 #define BYTE_TO_BINARY(byte)  \
   (byte & 0x80 ? '1' : '0'), \
@@ -26,11 +29,15 @@ using namespace Windows::Devices::Bluetooth::GenericAttributeProfile;
 using namespace Windows::Storage::Streams;
 
 void PrintDevInfoKind(DeviceInformationKind kind);
-bool ConnectDevice(DeviceInformation deviceInfo);
+bool ConnectDevice(IDLTesting::BluetoothLEDeviceDisplay& device);
 void ReadBuffer();
 
 hstring bikeId = L"BluetoothLE#BluetoothLE70:66:55:73:ad:8a-fe:4a:3f:d8:8a:ee";
 array_view<uint8_t> readData;   //This variable is the main point of failure ?w
+bool isSubscribed = false;
+
+GattDeviceService currentSelectedService = NULL;
+GattCharacteristic currentSelectedCharacteristic = NULL;
 
 
 int main()
@@ -43,7 +50,7 @@ int main()
     watcher.EnumerateButton_Click();
     auto devList = watcher.KnownDevices();
 
-    printf("This program only scans for 30 seconds\nEnter any text to print device watcher's found BLE devices list\nenter 'stop' to stop the program\n\n\n");
+    printf("This program only scans for new devices for 30 seconds\nEnter any text continue and try connect the indoor bike\nREMEMBER TO enter 'stop' to stop the program\n\n\n");
 
     std::string inp = "123";
     while (inp != "stop")
@@ -53,39 +60,38 @@ int main()
         {
             auto bleDeviceDisplay = devList.GetAt(index).as<IDLTesting::BluetoothLEDeviceDisplay>();
             
+            if (bleDeviceDisplay != NULL) {
+                if (bleDeviceDisplay.DeviceInformation().Id() == bikeId) {
+                    printf("Device Found:\n\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
+                    printf("\tID: %ls", bleDeviceDisplay.DeviceInformation().Id().c_str());
+                    PrintDevInfoKind(bleDeviceDisplay.DeviceInformation().Kind());
+                    printf("\n");
 
-            if (bleDeviceDisplay.DeviceInformation().Id() == bikeId) {
-                printf("Device Found:\n\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
-                printf("\tID: %ls", bleDeviceDisplay.DeviceInformation().Id().c_str());
-                PrintDevInfoKind(bleDeviceDisplay.DeviceInformation().Kind());
-                printf("\n");
-
-                if (ConnectDevice(bleDeviceDisplay.DeviceInformation())) { //Sets all vars used in ReadBuffer to target bleDeviceDisplay
-                    printf("ConnectDevice Ran Successfully\n");
-                    ReadBuffer();   //reads the data in (hopefully)
-                    //printf("Data read: %u", readData.at(0)); //generates annoying compiler error, but should be fine
-                    //printf("Data read: ");
-                    //int i = 0;
-                    //for (uint8_t byte : readData) {
-                    //uint8_t byte = readData.at(0);
-                    //    printf("byte[%i]: %c%c%c%c%c%c%c%c", i, (byte & 0x80 ? '1' : '0'),
-                    //        (byte & 0x40 ? '1' : '0'),
-                    //        (byte & 0x20 ? '1' : '0'),
-                    //        (byte & 0x10 ? '1' : '0'),
-                    //        (byte & 0x08 ? '1' : '0'),
-                    //        (byte & 0x04 ? '1' : '0'),
-                    //        (byte & 0x02 ? '1' : '0'),
-                    //        (byte & 0x01 ? '1' : '0'));
-                    //}
+                    if (ConnectDevice(bleDeviceDisplay)) { //Sets all vars used in ReadBuffer to target bleDeviceDisplay
+                        printf("ConnectDevice Ran Successfully\n");
+                       
+                        printf("\n");
+                    }
+                    else {
+                        printf("ConnectDevice Failed\n");
+                    }
                     printf("\n");
                 }
-                printf("\n");
             }
         }
 
         printf("Size of list is, %u .\n", devList.Size());
 
         std::cin >> inp;
+    }
+    if (isSubscribed) {
+        GattCommunicationStatus status = currentSelectedCharacteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
+            GattClientCharacteristicConfigurationDescriptorValue::None).get();
+        if (status == GattCommunicationStatus::Success)
+        {
+            printf("Unsubscribed from BT char\n");
+            isSubscribed = false;
+        }
     }
 }
 
@@ -133,131 +139,101 @@ IVectorView<GattCharacteristic> characteristics;
 IVectorView<GattDeviceService> services;
 
 
-GattDeviceService currentSelectedService = NULL;
-GattCharacteristic currentSelectedCharacteristic = NULL;
 
-bool ConnectDevice(DeviceInformation deviceInfo)
+bool ConnectDevice(IDLTesting::BluetoothLEDeviceDisplay& device)
 {
     //get bluetooth device information
-     BluetoothLEDevice bluetoothLeDevice = BluetoothLEDevice::FromIdAsync(deviceInfo.Id()).get(); //no longer async but who cares ?W
+     BluetoothLEDevice bluetoothLeDevice = BluetoothLEDevice::FromIdAsync(device.DeviceInformation().Id()).get(); //.get() makes this no longer Async
     //Respond(bluetoothLeDevice.ConnectionStatus.ToString());
 
-     if (bluetoothLeDevice != NULL) {
+     if (bluetoothLeDevice != NULL) { //Redundant error prevention
 
-         //get its services
-         GattDeviceServicesResult result = bluetoothLeDevice.GetGattServicesAsync().get(); //no longer async but who cares ?W
+         //get device's services
+         GattDeviceServicesResult result = bluetoothLeDevice.GetGattServicesAsync().get(); //.get() makes this no longer Async
 
-         //verify if getting success 
          if (result.Status() == GattCommunicationStatus::Success)
          {
-             //store device services to list
+             //store all device services
              services = result.Services();
 
              //loop each services in list
              for (auto serv : services)
              {
-                 //get serviceName by converting the service UUID
-                 hstring ServiceName = to_hstring(serv.Uuid()); //Using hstring instead of std::string coz it works ?W
+                 //get serviceName from service UUID interface
+                 hstring ServiceName = to_hstring(serv.Uuid()); //Using hstring instead of std::string for compatability with winrt
 
-                 //printf("Checking Services: %ls ", ServiceName.c_str());
 
-                 //if current servicename matches the input service name / 65520 = 0xFFF0
-                 // 0x1826, 0x1818
-                 if (ServiceName == L"{00001818-0000-1000-8000-00805f9b34fb}") //ServiceTxtBox.Text)
+                 //Search for Cycling Power Service
+                 if (ServiceName == CYCLING_POWER_SERVICE)
                  {
                      //store the current service
                      currentSelectedService = serv;
 
-                     //get the current service characteristics
-                     GattCharacteristicsResult resultCharacterics = serv.GetCharacteristicsAsync().get();//no longer async but who cares ?W
+                     //get all characteristics from current service
+                     GattCharacteristicsResult resultCharacteristics = serv.GetCharacteristicsAsync().get();//.get() makes this no longer Async
 
                      //verify if getting characteristics is success 
-                     if (resultCharacterics.Status() == GattCommunicationStatus::Success)
+                     if (resultCharacteristics.Status() == GattCommunicationStatus::Success)
                      {
                          //store device services to list
-                         characteristics = resultCharacterics.Characteristics();
+                         characteristics = resultCharacteristics.Characteristics();
 
                          //loop through its characteristics
                          for (auto chara : characteristics)
                          {
-                             //get CharacteristicName by converting the current characteristic UUID
-                             hstring CharacteristicName = to_hstring(chara.Uuid()); //Using hstring instead of std::string coz it works ?W
+                             hstring CharacteristicName = to_hstring(chara.Uuid()); //Using hstring instead of std::string for compatability with winrt
 
                              printf("Checking characs: %ls ", CharacteristicName.c_str());
 
-                             //if current CharacteristicName matches the input characteristic name / 65524 = 0xFFF4
-                             if (CharacteristicName == CYCLE_POWER_MEASURE)//CharacteristicsTxtBox.Text)
+                             //Search for Cycling Power Measurement characteristic
+                             if (CharacteristicName == CYCLE_POWER_MEASURE)
                              {
-                                 printf("WE FOUND THE POWER!!! \n");
+                                 printf("BikeBLEDevice.CyclingPowerService.CyclingPowerMeasurement Has been found \n");
+
                                  //store the current characteristic
                                  currentSelectedCharacteristic = chara;
-                                 //stop method execution  
-                                 //done = true;
+                                 
+
+                                 GattCharacteristicProperties properties = chara.CharacteristicProperties();
+
+                                 //if selected characteristics has notify property
+                                 if (static_cast<uint32_t>(properties) & static_cast<uint32_t>(GattCharacteristicProperties::Notify)) //properties.HasFlag(GattCharacteristicProperties::Notify)
+                                 {
+                                    if (isSubscribed == false) {
+
+                                        GattCommunicationStatus status = currentSelectedCharacteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
+                                            GattClientCharacteristicConfigurationDescriptorValue::Notify).get(); //.get() makes this no longer Async
+
+                                        if (status == GattCommunicationStatus::Success)
+                                        {
+                                            // Server has been informed of clients interest.
+                                            printf("Subscribed to notification\n\n");
+                                            isSubscribed = true;
+                                            device.NotifyOnCharacteristicChange(currentSelectedCharacteristic);
+                                        }
+                                    }
+                                 }
+                                 
+
+
                                  return true;
                              }
-                             printf("\n"); //for printing characs
+                             //printf("\n"); //for printing characs
+                         }
+                         if (currentSelectedCharacteristic == NULL) {
+                             printf("Could not find Cycling power measurement characteristic on device\n");
                          }
                      }
+                     else{ printf("main.cpp line 179: Failed to retrieve characteristics data\n"); }
+                     
                  }
                  //printf("\n"); //for printing servs
              }
+             if (currentSelectedService == NULL) {
+                 printf("Could not find Cycling power service on device\n");
+             }
          }
+         else { printf("main.cpp line 153: Failed to retrieve service data\n"); }
      }
     return false;
-}
-
-
-//Funktion ließt die Charakteristik und übergibt sie asynchron
-//Function reads the characteristic and passes it asynchronously ?W
-void ReadBuffer()
-{
-    //std::vector<Byte> ret;
-    if (currentSelectedService != NULL && currentSelectedCharacteristic != NULL)
-    {
-        GattCharacteristicProperties properties = currentSelectedCharacteristic.CharacteristicProperties();
-        
-        //if selected characteristics has read property
-        if (static_cast<uint32_t>(properties) & static_cast<uint32_t>(GattCharacteristicProperties::Read)) //properties.HasFlag(GattCharacteristicProperties::Read)?W
-        {
-            //read value asynchronously
-            GattReadResult result = currentSelectedCharacteristic.ReadValueAsync(BluetoothCacheMode::Cached).get(); //Dunno why its Uncached, it just is ?W
-            if (result.Status() == GattCommunicationStatus::Success)
-            {
-                //result.Value()
-                //printf("Data read is: ");
-                /*auto reader = DataReader::FromBuffer(result.Value());
-                reader.ReadBytes(readData);*/
-                printf("Data read Length: %u \n", result.Value().Length());
-                printf("Data read: %u", result.Value());
-                return;// ret;
-            }
-            return;// null;
-        }
-        return;// null;
-    }
-    //return null;
-}
-
-
-//BKCM - Bike communication, the data recieved from the bike
-enum class Tests {
-    DotDataTest,
-    CheckBKCMSize
-};
-
-void testSuite(Tests type, GattReadResult data) {
-    if (type == Tests::DotDataTest) {
-        auto reader = DataReader::FromBuffer(data.Value());
-        reader.ReadBytes(readData);
-        if (!readData.empty()) {
-            printf("Data read: %u", readData.data());
-        }
-        else {
-            printf("Data read: Empty");
-        }
-    }
-    if (type == Tests::CheckBKCMSize) {
-        printf("Data read: %u", data.Value().Length());
-    }
-
 }

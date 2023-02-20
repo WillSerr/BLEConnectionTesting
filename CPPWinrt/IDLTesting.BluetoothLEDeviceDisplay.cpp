@@ -1,12 +1,18 @@
 #include "pch.h"
+#include <bluetoothleapis.h>
 #include "IDLTesting.BluetoothLEDeviceDisplay.h"
 #include "IDLTesting.BluetoothLEDeviceDisplay.g.cpp"
+
 
 
 namespace winrt::IDLTesting::implementation
 {
     BluetoothLEDeviceDisplay::BluetoothLEDeviceDisplay(Windows::Devices::Enumeration::DeviceInformation const& deviceInfoIn)
         : m_deviceInformation(deviceInfoIn)
+    {
+    }
+
+    BluetoothLEDeviceDisplay::~BluetoothLEDeviceDisplay()
     {
     }
 
@@ -24,6 +30,55 @@ namespace winrt::IDLTesting::implementation
 
         //UpdateGlyphBitmapImage();
     }
+
+    void BluetoothLEDeviceDisplay::NotifyOnCharacteristicChange(winrt::Windows::Devices::Bluetooth::GenericAttributeProfile::GattCharacteristic const& sender)
+    {
+        currentSubscribedCharacteristic = &sender;
+        NotifyToken = sender.ValueChanged({ get_weak(), &BluetoothLEDeviceDisplay::characteristicNotification });
+    }
+
+    fire_and_forget BluetoothLEDeviceDisplay::characteristicNotification(GattCharacteristic sender, GattValueChangedEventArgs args)
+    {
+        
+        //args.CharacteristicValue
+        auto dataReader = Windows::Storage::Streams::DataReader::FromBuffer(args.CharacteristicValue());
+
+        printf("Notification: ");       //Show that notification has been received
+        unsigned int bufflen = dataReader.UnconsumedBufferLength(); //get the size of the notification in bytes
+        printf("bytes: %u \t", bufflen);
+        if (bufflen >= 4) {
+            uint8_t flags[2] = { 11,11 };
+            dataReader.ReadBytes(flags);
+            printf("Flags:  %x %x \t", flags[0], flags[1]);
+            printf("Instantaneous Power:  %i \t", dataReader.ReadInt16());
+
+           
+
+            if ((flags[0]>>7) & 1) {
+                printf("Pedal Power Balance in 0.5%s:  %u \t", dataReader.ReadByte()); // For double crank systems
+            }
+            if ((flags[0] >> 5) & 1) {
+                printf("Accumulated Torque :  %u \t", dataReader.ReadUInt16());
+            }
+            if ((flags[0] >> 3) & 1) {
+                printf("Cumulative Wheel Revolutions :  %u \t", dataReader.ReadUInt32());
+                printf("Last Wheel Event Time :  %u \t", dataReader.ReadUInt16());                
+            }
+            if ((flags[0] >> 2) & 1) {
+                printf("Cumulative Crank Revolutions :  %u \t", dataReader.ReadUInt16());
+                printf("Last Crank Event Time :  %u \t", dataReader.ReadUInt16());
+            }
+            //etc, there are a lot of these and I'm pretty sure none of them are usefull
+
+        }
+        else {
+            printf("The notification data is invalid");
+        }
+        printf("\n");
+
+        return fire_and_forget();
+    }
+
     //bool BluetoothLEDeviceDisplay::LookupBooleanProperty(param::hstring const& property)
     //{
     //    auto value = m_deviceInformation.Properties().TryLookup(property);

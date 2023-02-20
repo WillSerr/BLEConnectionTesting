@@ -35,9 +35,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PhotoEditor.Photo.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="IDLTesting.LiteWatcher.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -53,9 +50,6 @@
     <Text Include="readme.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="Photo.idl">
-      <Filter>Source Files</Filter>
-    </Midl>
     <Midl Include="IDLTesting.idl">
       <Filter>Source Files</Filter>
     </Midl>

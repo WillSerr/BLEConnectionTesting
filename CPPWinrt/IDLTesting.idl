@@ -46,5 +46,7 @@ namespace IDLTesting
         IMapView<String, Object> Properties{ get; };
 
         void Update(Windows.Devices.Enumeration.DeviceInformationUpdate deviceInfoUpdate);
+
+        void NotifyOnCharacteristicChange(Windows.Devices.Bluetooth.GenericAttributeProfile.GattCharacteristic sender);
     };
 }
