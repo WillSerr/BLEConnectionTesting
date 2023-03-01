@@ -58,24 +58,27 @@ int main()
         uint32_t size = devList.Size();
         for (uint32_t index = 0; index < size; index++)
         {
-            auto bleDeviceDisplay = devList.GetAt(index).as<IDLTesting::BluetoothLEDeviceDisplay>();
+            auto inspectDevice = devList.GetAt(index);
+            if (inspectDevice != NULL){
+                auto bleDeviceDisplay = inspectDevice.as<IDLTesting::BluetoothLEDeviceDisplay>();
             
-            if (bleDeviceDisplay != NULL) {
-                if (bleDeviceDisplay.DeviceInformation().Id() == bikeId) {
-                    printf("Device Found:\n\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
-                    printf("\tID: %ls", bleDeviceDisplay.DeviceInformation().Id().c_str());
-                    PrintDevInfoKind(bleDeviceDisplay.DeviceInformation().Kind());
-                    printf("\n");
+                if (bleDeviceDisplay != NULL) {
+                    if (bleDeviceDisplay.DeviceInformation().Id() == bikeId) {
+                        printf("Device Found:\n\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
+                        printf("\tID: %ls", bleDeviceDisplay.DeviceInformation().Id().c_str());
+                        PrintDevInfoKind(bleDeviceDisplay.DeviceInformation().Kind());
+                        printf("\n");
 
-                    if (ConnectDevice(bleDeviceDisplay)) { //Sets all vars used in ReadBuffer to target bleDeviceDisplay
-                        printf("ConnectDevice Ran Successfully\n");
-                       
+                        if (ConnectDevice(bleDeviceDisplay)) { //Sets all vars used in ReadBuffer to target bleDeviceDisplay
+                            printf("ConnectDevice Ran Successfully\n");
+
+                            printf("\n");
+                        }
+                        else {
+                            printf("ConnectDevice Failed\n");
+                        }
                         printf("\n");
                     }
-                    else {
-                        printf("ConnectDevice Failed\n");
-                    }
-                    printf("\n");
                 }
             }
         }
