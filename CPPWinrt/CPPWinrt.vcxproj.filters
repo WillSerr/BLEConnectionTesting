@@ -27,6 +27,9 @@
     <ClInclude Include="IDLTesting.BluetoothLEDeviceDisplay.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="WinsockHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -39,6 +42,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="IDLTesting.BluetoothLEDeviceDisplay.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WinsockHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

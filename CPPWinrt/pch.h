@@ -22,3 +22,8 @@
 //#include "winrt/Windows.UI.Xaml.Media.Imaging.h"
 //#include "winrt/Windows.UI.Xaml.Navigation.h"
 #include <ctime>
+
+#include <WinSock2.h>
+#include <WS2tcpip.h>
+#include <stdio.h>
+#include <stdlib.h>

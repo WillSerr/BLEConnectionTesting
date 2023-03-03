@@ -105,6 +105,7 @@
     <ClInclude Include="IDLTesting.LiteWatcher.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PhotoEditor.Photo.h" />
+    <ClInclude Include="WinsockHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="IDLTesting.BluetoothLEDeviceDisplay.cpp" />
@@ -113,6 +114,7 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="WinsockHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -42,6 +42,17 @@ namespace winrt::IDLTesting::implementation
             return false;// LookupBooleanProperty(L"System.Devices.Aep.Bluetooth.Le.IsConnectable");
         }
 
+        bool Updated()
+        {
+            return updated;
+        }
+
+        int16_t Power()
+        {
+            updated = false;
+            return power;
+        }
+
         Windows::Foundation::Collections::IMapView<hstring, Windows::Foundation::IInspectable> Properties()
         {
             return m_deviceInformation.Properties();
@@ -63,5 +74,8 @@ namespace winrt::IDLTesting::implementation
 
         //void OnPropertyChanged(param::hstring const& property);
         //bool LookupBooleanProperty(param::hstring const& property);
+
+        bool updated = false;
+        int16_t power = 0;
     };
 }

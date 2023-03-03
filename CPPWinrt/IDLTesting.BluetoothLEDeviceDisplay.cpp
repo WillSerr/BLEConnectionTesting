@@ -48,10 +48,13 @@ namespace winrt::IDLTesting::implementation
         unsigned int bufflen = dataReader.UnconsumedBufferLength(); //get the size of the notification in bytes
         printf("byte count: %u ", bufflen);
         if (bufflen >= 4) {
+            updated = true;
+
             uint8_t flags[2] = { 11,11 };
             dataReader.ReadBytes(flags);
             printf("Flags:  %x %x \t", flags[0], flags[1]);
-            printf("Instantaneous Power:  %u \t", (dataReader.ReadUInt16()));
+            power = dataReader.ReadUInt16();
+            printf("Instantaneous Power:  %u \t", power);
 
            
 
