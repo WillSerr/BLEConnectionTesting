@@ -6,6 +6,7 @@
 #include <bluetoothleapis.h>
 #include <future>
 
+#define TESTMESSAGECOUNT 0
 
 
 #define CYCLE_POWER_FEATURE L"{00002a65-0000-1000-8000-00805f9b34fb}"
@@ -22,7 +23,6 @@ using namespace Windows::Storage::Streams;
 
 void PrintDevInfoKind(DeviceInformationKind kind);
 bool ConnectDevice(IDLTesting::BluetoothLEDeviceDisplay& device);
-void ReadBuffer();
 hstring bikeId = L"BluetoothLE#BluetoothLE70:66:55:73:ad:8a-fe:4a:3f:d8:8a:ee";
 array_view<uint8_t> readData;   //This variable is the main point of failure ?w
 bool isSubscribed = false;
@@ -30,6 +30,7 @@ bool isSubscribed = false;
 GattDeviceService currentSelectedService = NULL;
 GattCharacteristic currentSelectedCharacteristic = NULL;
 IDLTesting::BluetoothLEDeviceDisplay* connectedBike = NULL;
+
 
 int main()
 {
@@ -46,14 +47,36 @@ int main()
     WinsockHelper winsockHelper;
 
 
+    int TESTmessagesToSend = TESTMESSAGECOUNT;
 
     bool mustClose = false;
     while (!mustClose) {
 
         winsockHelper.PollForConnection(); //Try connecting to the Game Listen Server
         
-        if (winsockHelper.getClientCount() == 1) { //IF the game is connected
+        if (winsockHelper.getClientCount() > 0) { //IF the game is connected
             
+#pragma region BikeLessTestMessages
+            if (TESTmessagesToSend > 0) {
+            //    TESTmessagesToSend -= 1;
+
+            //    WinsockHelper::MessageContents messageBuffer;
+
+
+            //    messageBuffer.powerValue = 1234;
+
+
+            //    //Send the message to the server.
+            //    if (send(winsockHelper.AcceptSocket, (char*)&messageBuffer, sizeof(WinsockHelper::MessageContents), 0) != sizeof(WinsockHelper::MessageContents))
+            //    {
+            //        //die("send failed");
+            //        printf("failed to send");
+            //    }
+            //    printf("sent message\n");
+            }
+
+#pragma endregion
+
             if (!isSubscribed) { //Try find the bike in the device list and subscribe to Cycle Power Measurement notifications
 
                 uint32_t size = devList.Size();
@@ -87,7 +110,7 @@ int main()
                 printf("Size of list is, %u .\n", devList.Size());
             }
             else
-            {
+            {         
                 if (connectedBike->Updated())
                 {
                     WinsockHelper::MessageContents messageBuffer;
@@ -104,6 +127,9 @@ int main()
                     }
                 }
             }
+        }
+        else {
+            TESTmessagesToSend = TESTMESSAGECOUNT;
         }
     }
     if (isSubscribed) {

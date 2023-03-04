@@ -47,7 +47,7 @@ void WinsockHelper::StartServer() {
     //Build socket address structure for binding the socket
     sockaddr_in InetAddr;
     InetAddr.sin_family = AF_INET;
-    inet_pton(AF_INET, "127.0.0.1", &(InetAddr.sin_addr));
+    inet_pton(AF_INET, SERVERIP, &(InetAddr.sin_addr));
     InetAddr.sin_port = htons(SERVERPORT);
 
     //Create our TCP server/listen socket
