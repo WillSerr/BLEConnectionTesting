@@ -17,6 +17,8 @@ namespace winrt::IDLTesting::implementation
             return m_deviceInformation;
         }
 
+        bool Updated();
+
         hstring Id()
         {
             return m_deviceInformation.Id();
@@ -40,11 +42,6 @@ namespace winrt::IDLTesting::implementation
         bool IsConnectable()
         {
             return false;// LookupBooleanProperty(L"System.Devices.Aep.Bluetooth.Le.IsConnectable");
-        }
-
-        bool Updated()
-        {
-            return updated;
         }
 
         int16_t Power()

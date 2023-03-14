@@ -29,7 +29,6 @@ bool isSubscribed = false;
 
 GattDeviceService currentSelectedService = NULL;
 GattCharacteristic currentSelectedCharacteristic = NULL;
-IDLTesting::BluetoothLEDeviceDisplay* connectedBike = NULL;
 
 
 int main()
@@ -48,6 +47,9 @@ int main()
 
 
     int TESTmessagesToSend = TESTMESSAGECOUNT;
+
+
+    IDLTesting::BluetoothLEDeviceDisplay connectedBike = NULL;
 
     bool mustClose = false;
     while (!mustClose) {
@@ -94,9 +96,12 @@ int main()
                                 printf("\n");
 
                                 if (ConnectDevice(bleDeviceDisplay)) { //Sets all vars used in ReadBuffer to target bleDeviceDisplay
-                                    printf("ConnectDevice Ran Successfully\n");
+                                    printf("ConnectDevice Ran Successfully and has subscirbed\n");
 
                                     printf("\n");
+
+                                    connectedBike = devList.GetAt(index).as<IDLTesting::BluetoothLEDeviceDisplay>();
+                                    break;
                                 }
                                 else {
                                     printf("ConnectDevice Failed\n");
@@ -111,26 +116,29 @@ int main()
             }
             else
             {         
-                if (connectedBike->Updated())
-                {
-                    WinsockHelper::MessageContents messageBuffer;
-
-
-                    messageBuffer.powerValue = connectedBike->Power();
-
-
-                    //Send the message to the server.
-                    if (send(winsockHelper.AcceptSocket, (char*)&messageBuffer, sizeof(WinsockHelper::MessageContents), 0) != sizeof(WinsockHelper::MessageContents))
+                if (connectedBike) {
+                    if (connectedBike.Updated())
                     {
-                        //die("send failed");
-                        printf("failed to send");
+                        WinsockHelper::MessageContents messageBuffer;
+
+
+                        messageBuffer.powerValue = connectedBike.Power();
+
+
+                        //Send the message to the server.
+                        if (send(winsockHelper.AcceptSocket, (char*)&messageBuffer, sizeof(WinsockHelper::MessageContents), 0) != sizeof(WinsockHelper::MessageContents))
+                        {
+                            //die("send failed");
+                            printf("failed to send");
+                        }
+                        printf("power value: %i", connectedBike.Power());
                     }
                 }
             }
         }
-        else {
-            TESTmessagesToSend = TESTMESSAGECOUNT;
-        }
+        //else {
+        //    TESTmessagesToSend = TESTMESSAGECOUNT;
+        //}
     }
     if (isSubscribed) {
         GattCommunicationStatus status = currentSelectedCharacteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
@@ -252,20 +260,29 @@ bool ConnectDevice(IDLTesting::BluetoothLEDeviceDisplay& device)
                                         GattCommunicationStatus status = currentSelectedCharacteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
                                             GattClientCharacteristicConfigurationDescriptorValue::Notify).get(); //.get() makes this no longer Async
 
+                                        /*currentSelectedCharacteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
+                                            GattClientCharacteristicConfigurationDescriptorValue::Notify);*/
+
                                         if (status == GattCommunicationStatus::Success)
                                         {
                                             // Server has been informed of clients interest.
                                             printf("Subscribed to notification\n\n");
                                             isSubscribed = true;
                                             device.NotifyOnCharacteristicChange(currentSelectedCharacteristic);
-                                            connectedBike = &device;
+                                            
+                                            return true;
+                                        }
+                                        else
+                                        {
+                                            printf("Failed to subscribe to notification\n\n");
+
                                         }
                                     }
                                  }
                                  
 
 
-                                 return true;
+                                 return false;
                              }
                              //printf("\n"); //for printing characs
                          }
@@ -273,7 +290,7 @@ bool ConnectDevice(IDLTesting::BluetoothLEDeviceDisplay& device)
                              printf("Could not find Cycling power measurement characteristic on device\n");
                          }
                      }
-                     else{ printf("main.cpp line 179: Failed to retrieve characteristics data\n"); }
+                     else{ printf("main.cpp line 288: Failed to retrieve characteristics data\n"); }
                      
                  }
                  //printf("\n"); //for printing servs

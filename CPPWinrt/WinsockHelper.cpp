@@ -12,7 +12,7 @@ int WinsockHelper::getClientCount()
 }
 
 void WinsockHelper::die(const char* message) {
-    fprintf(stderr, "Error: %s (WSAGetLastError() = %d)\n", message, WSAGetLastError());
+    fprintf(stderr, "\n\n\nError: %s (WSAGetLastError() = %d)\n\n\n\n", message, WSAGetLastError());
 
 #ifdef _DEBUG
     // Debug build -- drop the program into the debugger.
