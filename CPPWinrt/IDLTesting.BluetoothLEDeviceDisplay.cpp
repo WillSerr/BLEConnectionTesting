@@ -41,7 +41,8 @@ namespace winrt::IDLTesting::implementation
     void BluetoothLEDeviceDisplay::NotifyOnCharacteristicChange(winrt::Windows::Devices::Bluetooth::GenericAttributeProfile::GattCharacteristic const& sender)
     {
         currentSubscribedCharacteristic = &sender;
-        NotifyToken = sender.ValueChanged({ get_weak(), &BluetoothLEDeviceDisplay::characteristicNotification });
+        //NotifyToken = sender.ValueChanged({ get_weak(), &BluetoothLEDeviceDisplay::characteristicNotification });
+        NotifyToken = sender.ValueChanged({ this, &BluetoothLEDeviceDisplay::characteristicNotification }); //As per microsoft docs https://learn.microsoft.com/en-us/windows/uwp/cpp-and-winrt-apis/handle-events
     }
 
     fire_and_forget BluetoothLEDeviceDisplay::characteristicNotification(GattCharacteristic sender, GattValueChangedEventArgs args)
@@ -56,7 +57,7 @@ namespace winrt::IDLTesting::implementation
         printf("byte count: %u ", bufflen);
         if (bufflen >= 4) {
             updated = true;
-
+            
             uint8_t flags[2] = { 11,11 };
             dataReader.ReadBytes(flags);
             printf("Flags:  %x %x \t", flags[0], flags[1]);
@@ -97,7 +98,7 @@ namespace winrt::IDLTesting::implementation
         }
         printf("]\n");*/
 
-        return fire_and_forget();
+        co_return;// fire_and_forget();
     }
 
     //bool BluetoothLEDeviceDisplay::LookupBooleanProperty(param::hstring const& property)
