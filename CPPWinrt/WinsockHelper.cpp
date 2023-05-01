@@ -80,6 +80,84 @@ void WinsockHelper::StartServer() {
     printf("Listening on socket...\n");
 }
 
+void WinsockHelper::sendErrorMessage(Errors errorType)
+{
+    WinsockHelper::MessageHeader messageHeader;
+    messageHeader.type = 'E';
+    //Send the message to the server.
+    if (send(AcceptSocket, (char*)&messageHeader, sizeof(WinsockHelper::MessageHeader), 0) != sizeof(WinsockHelper::MessageHeader))
+    {
+        printf("Error message Header failed to send");
+    }
+
+    WinsockHelper::ErrorMessage messageBuffer;
+    messageBuffer.errorCode = errorType;
+    //Send the message to the server.
+    if (send(AcceptSocket, (char*)&messageBuffer, sizeof(WinsockHelper::ErrorMessage), 0) != sizeof(WinsockHelper::ErrorMessage))
+    {
+        printf("Error message body failed to send");
+    }
+}
+
+void WinsockHelper::sendPowerMessage(uint32_t power)
+{
+    WinsockHelper::MessageHeader messageHeader;
+    messageHeader.type = 'P';
+    //Send the message to the server.
+    if (send(AcceptSocket, (char*)&messageHeader, sizeof(WinsockHelper::MessageHeader), 0) != sizeof(WinsockHelper::MessageHeader))
+    {
+        printf("Power message Header failed to send");
+    }
+
+    WinsockHelper::PowerMessage messageBuffer;
+    messageBuffer.power = power;
+    //Send the message to the server.
+    if (send(AcceptSocket, (char*)&messageBuffer, sizeof(WinsockHelper::PowerMessage), 0) != sizeof(WinsockHelper::PowerMessage))
+    {
+        printf("Power message body failed to send");
+    }
+}
+
+void WinsockHelper::sendAvailableBikesMessage(int bikeCount, std::vector<std::string>* IDs, std::vector<std::string>* names)
+{
+    std::string messageBody;
+    for (int i = 0; i < bikeCount; i++) {
+        std::string bikeData = IDs->at(i) + names->at(i) + '¬';
+        messageBody.append(bikeData);
+    }
+
+    WinsockHelper::MessageHeader messageHeader;
+    messageHeader.type = 'A';
+    messageHeader.messageLengthData = sizeof(messageBody);
+    //Send the message header to the Game.
+    if (send(AcceptSocket, (char*)&messageHeader, sizeof(WinsockHelper::MessageHeader), 0) != sizeof(WinsockHelper::MessageHeader))
+    {
+        printf("Available Bike message Header failed to send\n");
+    }
+
+    //Send the message body to the Game.
+    if (send(AcceptSocket, (char*)&messageBody, sizeof(messageBody), 0) != sizeof(messageBody))
+    {
+        printf("Available Bike message body failed to send\n");
+    }
+
+    ////BACKUP IF ABOVE DOES NOT WORK ---DELETEME
+    //char data[500];
+    //if (messageBody.size() > 500) {
+    //    printf("Too much data to send\n");
+    //}
+    //else {
+    //    memmove(data, messageBody.c_str(), messageBody.size());
+    //    //Send the message body to the Game.
+    //    if (send(AcceptSocket, (char*)&data, sizeof(messageBody), 0) != sizeof(messageBody))
+    //    {
+    //        printf("Available Bike message body failed to send\n");
+    //    }
+    //}
+
+
+}
+
 bool WinsockHelper::PollForConnection() {
     DWORD returnVal;
 

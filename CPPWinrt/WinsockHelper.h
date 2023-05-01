@@ -22,6 +22,7 @@ public:
 		int powerValue = -1;
 	};
 
+
 	int getClientCount();
 
 private:
@@ -37,5 +38,38 @@ private:
 	WSANETWORKEVENTS NetworkEvents;
 
 	int eventIndex = 0;
+
+#pragma region NetworkMessageStructs
+	struct MessageHeader {
+		char type = 'N';
+		uint32_t messageLengthData = 0;
+	};
+
+	struct ErrorMessage {
+		uint32_t errorCode = 0;
+	};
+
+	struct PowerMessage {
+		uint32_t power = 0;
+	};
+
+	enum Errors : uint32_t {
+		Unknown = 0,
+		FailedToCreateFromUUID = 1
+	};
+#pragma endregion
+
+	void sendErrorMessage(Errors errorType);
+
+public:
+
+	struct BikeDeviceInfo {
+		char ID[12] = { 0 };
+		std::string name;
+	};
+
+	void sendPowerMessage(uint32_t power);
+
+	void sendAvailableBikesMessage(int bikeCount, std::vector<std::string>* IDs, std::vector<std::string>* names);
 };
 
