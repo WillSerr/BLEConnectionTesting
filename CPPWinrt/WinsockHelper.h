@@ -1,4 +1,7 @@
 #pragma once
+#include "pch.h"
+
+#include "IDLTesting.LiteWatcher.h"
 
 #include <WinSock2.h>
 #include <WS2tcpip.h>
@@ -14,8 +17,11 @@ class WinsockHelper
 {
 public:
 	WinsockHelper();
+	~WinsockHelper();
 
 	bool PollForConnection();
+
+	bool HandleIncomingEvents();
 
 	SOCKET ListenSocket, AcceptSocket;
 
@@ -26,10 +32,14 @@ public:
 
 	int getClientCount();
 
+	winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::Foundation::IInspectable>* devList;
+
 private:
 	void die(const char* message);
 	void InitWinSock();
 	void StartServer();
+	void CleanupSocket();
+	void PrintError(const char* eMessage);
 
 	WSAEVENT ListenEvent, AcceptEvent;
 	int eventCount = 0;
@@ -41,6 +51,7 @@ private:
 	int eventIndex = 0;
 
 #pragma region NetworkMessageStructs
+	//Server Messages
 	enum MessageType : char{
 		None = 'N',
 		Error = 'E',
@@ -66,11 +77,26 @@ private:
 		uint32_t power = 0;
 	};
 
+	//Client Messages
+	enum ClientMessageType : char {
+		inValid = 'N',
+		reqTestMessage = 'T',
+		reqAvailableBikes = 'A',
+		reqConnect = 'C',
+		reqExit = 'E'
+	};
 
+	struct ClientMessage {
+		ClientMessageType type = ClientMessageType::inValid;
+		uint32_t data = -1;
+	};
 #pragma endregion
 
 	void sendErrorMessage(Errors errorType);
 
+	void decodeNetworkMessage(SOCKET& socket);
+
+	void updateBikeList();
 public:
 
 	struct BikeDeviceInfo {
@@ -80,6 +106,9 @@ public:
 
 	void sendPowerMessage(uint32_t power);
 
+
+	std::vector< std::string> IDs;
+	std::vector< std::string> names;
 	void sendAvailableBikesMessage(int bikeCount, std::vector<std::string>* IDs, std::vector<std::string>* names);
 
 	void sendNetworkTestingMessages();

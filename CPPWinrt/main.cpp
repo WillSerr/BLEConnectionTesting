@@ -56,6 +56,7 @@ int main()
     printf("This program only scans for new devices for 30 seconds\n\n\n");
 
     WinsockHelper winsockHelper;
+    winsockHelper.devList = &devList;
 
     IDLTesting::BluetoothLEDeviceDisplay connectedBike = NULL;
 
@@ -63,104 +64,112 @@ int main()
     std::vector< std::string> names;
 
     bool mustClose = false;
+    uint32_t lastSize = -1;
     while (!mustClose) {
         
         if (winsockHelper.getClientCount() > 0) { //IF the game is connected
+            winsockHelper.HandleIncomingEvents();
+            if (winsockHelper.getClientCount() == 0) {
+                break;
+            }
             
 
             if (!isSubscribed) { //If in device selection mode
 
-                IDs.clear();
-                uint32_t size = devList.Size();
-                for (uint32_t index = 0; index < size; index++)
-                {
-                    auto inspectDevice = devList.GetAt(index);
-                    if (inspectDevice != NULL) {
-                        auto bleDeviceDisplay = inspectDevice.as<IDLTesting::BluetoothLEDeviceDisplay>();
-                        if (bleDeviceDisplay != NULL) {
-                            if (IsConnectableTrainer(bleDeviceDisplay))
-                            {
-                                printf("Device Found:\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
-                                printf("\tID: %ls", bleDeviceDisplay.DeviceInformation().Id().c_str());
-                                PrintDevInfoKind(bleDeviceDisplay.DeviceInformation().Kind());
-                                printf("\n");
+                //IDs.clear();
+                //names.clear();
+                //uint32_t size = devList.Size();
+                //for (uint32_t index = 0; index < size; index++)
+                //{
+                //    auto inspectDevice = devList.GetAt(index);
+                //    if (inspectDevice != NULL) {
+                //        auto bleDeviceDisplay = inspectDevice.as<IDLTesting::BluetoothLEDeviceDisplay>();
+                //        if (bleDeviceDisplay != NULL) {
+                //            if (IsConnectableTrainer(bleDeviceDisplay))
+                //            {
+                //                printf("Device Found:\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
+                //                printf("\tID: %ls", bleDeviceDisplay.DeviceInformation().Id().c_str());
+                //                PrintDevInfoKind(bleDeviceDisplay.DeviceInformation().Kind());
+                //                printf("\n");
 
-                                IDs.push_back(to_string(bleDeviceDisplay.DeviceInformation().Id()));
-                                names.push_back(to_string(bleDeviceDisplay.DeviceInformation().Name()));
-                                //if (ConnectDevice(bleDeviceDisplay)) { //Sets all vars used in ReadBuffer to target bleDeviceDisplay
-                                //    printf("ConnectDevice Ran Successfully and has subscirbed\n");
+                //                IDs.push_back(to_string(bleDeviceDisplay.DeviceInformation().Id()));
+                //                names.push_back(to_string(bleDeviceDisplay.DeviceInformation().Name()));
+                //                //if (ConnectDevice(bleDeviceDisplay)) { //Sets all vars used in ReadBuffer to target bleDeviceDisplay
+                //                //    printf("ConnectDevice Ran Successfully and has subscirbed\n");
 
-                                //    printf("\n");
+                //                //    printf("\n");
 
-                                //    connectedBike = devList.GetAt(index).as<IDLTesting::BluetoothLEDeviceDisplay>();
-                                //    break;
-                                //}
-                                //else {
-                                //    printf("ConnectDevice Failed\n");
-                                //    mustClose = true;
-                                //}
-                                //printf("\n");
-                                //}
-                            }
-                        }
-                    }
+                //                //    connectedBike = devList.GetAt(index).as<IDLTesting::BluetoothLEDeviceDisplay>();
+                //                //    break;
+                //                //}
+                //                //else {
+                //                //    printf("ConnectDevice Failed\n");
+                //                //    mustClose = true;
+                //                //}
+                //                //printf("\n");
+                //                //}
+                //            }
+                //        }
+                //    }
+                //}
+
+                if (devList.Size() != lastSize) {
+                    printf("\n\nSize of list is, %u .\n", devList.Size());
+                    lastSize = devList.Size();
                 }
-
-
-                printf("\n\nSize of list is, %u .\n", devList.Size());
 
                 //winsockHelper.sendAvailableBikesMessage(IDs.size(), &IDs, &names);
 
-                std::string inputmessage;
-                std::cin >> inputmessage;
-                if (inputmessage == "stop") {
-                    mustClose = true;
-                    printf("\n");
-                }
-                else if (inputmessage == "test") {
-                    winsockHelper.sendNetworkTestingMessages();
-                }
-                else if (inputmessage == "select") {
-                    printf("Please enter the ID for the device you wish to inspect");
-                    std::string inSelectedID;
-                    std::cin >> inSelectedID;
+                //std::string inputmessage;
+                //std::cin >> inputmessage;
+                //if (inputmessage == "stop") {
+                //    mustClose = true;
+                //    printf("\n");
+                //}
+                //else if (inputmessage == "test") {
+                //    winsockHelper.sendNetworkTestingMessages();
+                //}
+                //else if (inputmessage == "select") {
+                //    printf("Please enter the ID for the device you wish to inspect");
+                //    std::string inSelectedID;
+                //    std::cin >> inSelectedID;
 
-                    hstring selectedID = to_hstring(inSelectedID);
-                    bool found = false;
+                //    hstring selectedID = to_hstring(inSelectedID);
+                //    bool found = false;
 
-                    uint32_t size = devList.Size();
-                    for (uint32_t index = 0; index < size; index++)
-                    {
-                        auto inspectDevice = devList.GetAt(index);
-                        if (inspectDevice != NULL) {
-                            auto bleDeviceDisplay = inspectDevice.as<IDLTesting::BluetoothLEDeviceDisplay>();
+                //    uint32_t size = devList.Size();
+                //    for (uint32_t index = 0; index < size; index++)
+                //    {
+                //        auto inspectDevice = devList.GetAt(index);
+                //        if (inspectDevice != NULL) {
+                //            auto bleDeviceDisplay = inspectDevice.as<IDLTesting::BluetoothLEDeviceDisplay>();
 
-                            if (bleDeviceDisplay != NULL) {
-                                if (bleDeviceDisplay.DeviceInformation().Id() == selectedID) {
-                                    found = true;
-                                    printf("Device Found:\n\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
-                                    printf("\tID: %ls", bleDeviceDisplay.DeviceInformation().Id().c_str());
-                                    PrintDevInfoKind(bleDeviceDisplay.DeviceInformation().Kind());
-                                    printf("\n");
+                //            if (bleDeviceDisplay != NULL) {
+                //                if (bleDeviceDisplay.DeviceInformation().Id() == selectedID) {
+                //                    found = true;
+                //                    printf("Device Found:\n\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
+                //                    printf("\tID: %ls", bleDeviceDisplay.DeviceInformation().Id().c_str());
+                //                    PrintDevInfoKind(bleDeviceDisplay.DeviceInformation().Kind());
+                //                    printf("\n");
 
-                                    if (ConnectDevice(bleDeviceDisplay)) { //Sets all vars used in ReadBuffer to target bleDeviceDisplay
-                                        printf("ConnectDevice Ran Successfully and has subscirbed\n");
+                //                    if (ConnectDevice(bleDeviceDisplay)) { //Sets all vars used in ReadBuffer to target bleDeviceDisplay
+                //                        printf("ConnectDevice Ran Successfully and has subscirbed\n");
 
-                                        printf("\n");
+                //                        printf("\n");
 
-                                        connectedBike = devList.GetAt(index).as<IDLTesting::BluetoothLEDeviceDisplay>();
-                                        break;
-                                    }
-                                    else {
-                                        printf("ConnectDevice Failed\n");
-                                        //mustClose = true;
-                                    }
-                                    printf("\n");
-                                }
-                            }
-                        }
-                    }
-                }
+                //                        connectedBike = devList.GetAt(index).as<IDLTesting::BluetoothLEDeviceDisplay>();
+                //                        break;
+                //                    }
+                //                    else {
+                //                        printf("ConnectDevice Failed\n");
+                //                        //mustClose = true;
+                //                    }
+                //                    printf("\n");
+                //                }
+                //            }
+                //        }
+                //    }
+                //}
             }
             else
             {         

@@ -7,6 +7,17 @@ WinsockHelper::WinsockHelper() {
     StartServer();
 }
 
+WinsockHelper::~WinsockHelper()
+{
+    if (closesocket(ListenSocket) != SOCKET_ERROR) {
+        printf("Successfully closed Listen socket\n");
+    }
+    if (WSACloseEvent(ListenEvent) == false) {
+        PrintError("WSACloseEvent() failed");
+    }
+    //CleanupSocket();
+}
+
 int WinsockHelper::getClientCount()
 {
     return clientCount;
@@ -81,6 +92,22 @@ void WinsockHelper::StartServer() {
     printf("Listening on socket...\n");
 }
 
+void WinsockHelper::CleanupSocket()
+{
+    if (closesocket(AcceptSocket) != SOCKET_ERROR) {
+        printf("Successfully closed Connected socket\n");
+    }
+    if (WSACloseEvent(AcceptEvent) == false) {
+        PrintError("WSACloseEvent() failed");
+    }
+    clientCount = 0;
+}
+
+void WinsockHelper::PrintError(const char* eMessage)
+{
+    printf("Error: %s (WSAGetLastError() = %i)\n", eMessage, WSAGetLastError());
+}
+
 void WinsockHelper::sendErrorMessage(Errors errorType)
 {
     WinsockHelper::MessageHeader messageHeader;
@@ -97,6 +124,124 @@ void WinsockHelper::sendErrorMessage(Errors errorType)
     if (send(AcceptSocket, (char*)&messageBuffer, sizeof(WinsockHelper::ErrorMessage), 0) != sizeof(WinsockHelper::ErrorMessage))
     {
         printf("Error message body failed to send");
+    }
+}
+
+void WinsockHelper::decodeNetworkMessage(SOCKET& socket)
+{
+    ClientMessage clientMessage;
+
+    // Read a response back from the server.
+    int count = recv(socket, (char*)&clientMessage, sizeof(ClientMessage), 0);
+    if (count <= 0)
+    {
+        PrintError("recv returns");
+    }
+
+    std::printf("Message from Client:\n\t%c\n\t%i\n", clientMessage.type,clientMessage.data);
+
+    switch (clientMessage.type)
+    {
+    case WinsockHelper::inValid:
+        break;
+    case WinsockHelper::reqTestMessage:
+        sendNetworkTestingMessages();
+        break;
+    case WinsockHelper::reqAvailableBikes:
+        updateBikeList();
+        sendAvailableBikesMessage(IDs.size(),&IDs,&names);
+        break;
+    case WinsockHelper::reqConnect:
+        break;
+    case WinsockHelper::reqExit:
+        break;
+    default:
+        break;
+    }
+
+}
+
+
+using namespace winrt;
+using namespace Windows::Foundation;
+using namespace Windows::Devices::Enumeration;
+using namespace Windows::Devices::Bluetooth;
+using namespace Windows::Devices::Bluetooth::GenericAttributeProfile;
+using namespace Windows::Foundation::Collections;
+
+
+void WinsockHelper::updateBikeList()
+{
+    if (devList == NULL) {
+        printf("Fail to update bike list: WinsockHandler.devList is NULL\n\n");
+        return;
+    }
+    IVectorView<GattCharacteristic> characteristics;
+    IVectorView<GattDeviceService> services;
+    IDs.clear();
+    names.clear();
+    uint32_t size = devList->Size();
+    for (uint32_t index = 0; index < size; index++) //-----Go through every device
+    {
+        //-----If the device is valid
+        auto inspectDevice = devList->GetAt(index);
+        if (inspectDevice != NULL) {
+            auto bleDeviceDisplay = inspectDevice.as<winrt::IDLTesting::BluetoothLEDeviceDisplay>();
+            if (bleDeviceDisplay != NULL) {
+                BluetoothLEDevice bluetoothLeDevice = BluetoothLEDevice::FromIdAsync(bleDeviceDisplay.DeviceInformation().Id()).get(); //.get() makes this no longer Async
+                if (bluetoothLeDevice != NULL) { //If device successfully created
+
+                    //-----Check if it is a bike trainer
+                    //get device's services
+                    GattDeviceServicesResult result = bluetoothLeDevice.GetGattServicesAsync().get(); //.get() makes this no longer Async
+                    if (result.Status() == GattCommunicationStatus::Success)
+                    {
+                        //store all device services
+                        services = result.Services();
+
+                        //loop each services in list
+                        for (auto serv : services)
+                        {
+                            //get serviceName from service UUID interface
+                            hstring ServiceName = to_hstring(serv.Uuid()); //Using hstring instead of std::string for compatability with winrt
+
+                            if (ServiceName.size() >= 9) //Redundant error checking
+                            {
+                                std::string nameString = to_string(ServiceName.c_str());
+
+                                //-----Add bikes to the vector
+                                if (std::char_traits<char>::compare(nameString.c_str(), "{00001818", 9) == 0) // If Service = Cycle power Service
+                                {
+                                    IDs.push_back(to_string(bleDeviceDisplay.DeviceInformation().Id()));
+                                    names.push_back(to_string(bleDeviceDisplay.DeviceInformation().Name()));
+
+                                    printf("Device Found:\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
+                                    printf("\tID: %ls\n", bleDeviceDisplay.DeviceInformation().Id().c_str());
+
+                                    break;
+                                }
+                                else if (std::char_traits<char>::compare(nameString.c_str(), "{00001826", 9) == 0) //If Service = Fitness Machine service
+                                {
+                                    IDs.push_back(to_string(bleDeviceDisplay.DeviceInformation().Id()));
+                                    names.push_back(to_string(bleDeviceDisplay.DeviceInformation().Name()));
+
+                                    printf("Device Found:\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
+                                    printf("\tID: %ls\n", bleDeviceDisplay.DeviceInformation().Id().c_str());
+
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    else {
+                        printf("main.cpp: Failed to retrieve service data from %ls\n", bleDeviceDisplay.DeviceInformation().Name().c_str());
+                    }
+                }
+                else {
+                    printf("main.cpp: Failed to create device from UUID: %ls\nCheck bluetooth is turned on\n", bleDeviceDisplay.DeviceInformation().Id().c_str());
+                }
+            }
+        }
     }
 }
 
@@ -186,8 +331,7 @@ bool WinsockHelper::PollForConnection() {
                 AcceptSocket = accept(ListenSocket, NULL, NULL);
                 AcceptEvent = WSACreateEvent();
 
-                //TODO: It'd be great if we could wait for a Read or Write event too...
-                WSAEventSelect(AcceptSocket, AcceptEvent, FD_CLOSE);
+                WSAEventSelect(AcceptSocket, AcceptEvent, FD_CLOSE|FD_READ); //Socket will accept Close and Read events
                 clientCount++;
 
                 printf("Socket %d connected\n", AcceptSocket);
@@ -200,37 +344,54 @@ bool WinsockHelper::PollForConnection() {
             die("WSAWaitForMultipleEvents failed!");
         }
     }
-    if (clientCount > 0) {
-        returnVal = WSAWaitForMultipleEvents(1, &AcceptEvent, false, 500, false);
-        if ((returnVal != WSA_WAIT_TIMEOUT) && (returnVal != WSA_WAIT_FAILED)) {
-            eventIndex = returnVal - WSA_WAIT_EVENT_0; //In practice, eventIndex will equal returnVal, but this is here for compatability
+    return true;
+}
 
-            if (WSAEnumNetworkEvents(AcceptSocket, AcceptEvent, &NetworkEvents) == SOCKET_ERROR) {
-                die("Retrieving event information failed");
+bool WinsockHelper::HandleIncomingEvents()
+{
+    DWORD returnVal;
+
+    if (clientCount > 0) { //If connected to the game client
+
+        returnVal = WSAWaitForMultipleEvents(1, &AcceptEvent, false, 0, false); //Check if any network events allow winsock functions to run without blocking
+        if ((returnVal != WSA_WAIT_TIMEOUT) && (returnVal != WSA_WAIT_FAILED)) {
+
+            if (WSAEnumNetworkEvents(AcceptSocket, AcceptEvent, &NetworkEvents) == SOCKET_ERROR) {	//Get the network events as binary flags
+                PrintError("Retrieving event information failed");
             }
-            if (NetworkEvents.lNetworkEvents & FD_CLOSE)
+            if (NetworkEvents.lNetworkEvents & FD_CLOSE)	//Server has closed the connection
             {
+                printf("Server closed the connection\n");
+
+
                 //We ignore the error if the client just force quit
                 if (NetworkEvents.iErrorCode[FD_CLOSE_BIT] != 0 && NetworkEvents.iErrorCode[FD_CLOSE_BIT] != 10053)
                 {
                     printf("FD_CLOSE failed with error %d\n", NetworkEvents.iErrorCode[FD_CLOSE_BIT]);
+
                     return false;
                 }
-                //Gracefully Close the socket
-                if (closesocket(AcceptSocket) != SOCKET_ERROR) {
-                    printf("Successfully closed socket %d\n", AcceptSocket);
+
+                CleanupSocket();
+                return false;
+            }
+            else if (NetworkEvents.lNetworkEvents & FD_READ)	//Server has sent data to read
+            {
+                if (NetworkEvents.iErrorCode[FD_READ_BIT] != 0) {
+                    printf("FD_ACCEPT failed with error %d\n", NetworkEvents.iErrorCode[FD_READ_BIT]);
+
+                    return false;
                 }
-                if (WSACloseEvent(AcceptEvent) == false) {
-                    die("WSACloseEvent() failed");
-                }
-                clientCount = 0;
+
+                decodeNetworkMessage(AcceptSocket);
+
             }
         }
         else if (returnVal == WSA_WAIT_TIMEOUT) {
             //All good, we just have no activity
         }
         else if (returnVal == WSA_WAIT_FAILED) {
-            die("WSAWaitForMultipleEvents failed!");
+            PrintError("WSAWaitForMultipleEvents failed!");
         }
     }
     return true;
