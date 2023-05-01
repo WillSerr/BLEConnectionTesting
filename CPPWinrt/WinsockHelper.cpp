@@ -152,6 +152,8 @@ void WinsockHelper::decodeNetworkMessage(SOCKET& socket)
         sendAvailableBikesMessage(IDs.size(),&IDs,&names);
         break;
     case WinsockHelper::reqConnect:
+        bikeIDToConnect = IDs.at(clientMessage.data);
+        std::printf("BikeID at index'%i' = %s\n", clientMessage.data, bikeIDToConnect.c_str());
         break;
     case WinsockHelper::reqExit:
         break;
@@ -298,15 +300,17 @@ void WinsockHelper::sendNetworkTestingMessages()
     sendErrorMessage(Errors::Unknown);
     sendPowerMessage(1234);
 
-    std::vector<std::string>IDs;
-    std::vector<std::string>Names;
+    //std::vector<std::string>IDs;
+    //std::vector<std::string>Names;
+    IDs.clear();
+    names.clear();
 
     for (int i = 0; i < 4; i++) {
         IDs.push_back("BluetoothLE#BluetoothLE70:66:55:73:ad:8a-fe:4a:3f:d8:8a:0" + std::to_string(i));
-        Names.push_back("BikeMessageNo:" + std::to_string(i));
+        names.push_back("BikeMessageNo:" + std::to_string(i));
     }
 
-    sendAvailableBikesMessage(IDs.size(), &IDs, &Names);
+    sendAvailableBikesMessage(IDs.size(), &IDs, &names);
 }
 
 bool WinsockHelper::PollForConnection() {

@@ -34,6 +34,8 @@ public:
 
 	winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::Foundation::IInspectable>* devList;
 
+	std::string bikeIDToConnect = "NULL";
+
 private:
 	void die(const char* message);
 	void InitWinSock();
@@ -50,6 +52,10 @@ private:
 
 	int eventIndex = 0;
 
+	void decodeNetworkMessage(SOCKET& socket);
+
+	void updateBikeList();
+
 #pragma region NetworkMessageStructs
 	//Server Messages
 	enum MessageType : char{
@@ -59,18 +65,10 @@ private:
 		AvailableBikes = 'A'
 	};
 
-	enum Errors : uint32_t {
-		Unknown = 0,
-		FailedToCreateFromUUID = 1
-	};
 
 	struct MessageHeader {
 		MessageType type = MessageType::None;
 		uint32_t messageLengthData = 0;
-	};
-
-	struct ErrorMessage {
-		uint32_t errorCode = 0;
 	};
 
 	struct PowerMessage {
@@ -90,14 +88,22 @@ private:
 		ClientMessageType type = ClientMessageType::inValid;
 		uint32_t data = -1;
 	};
+
+public:
+	enum Errors : uint32_t {
+		Unknown = 0,
+		FailedToCreateFromUUID = 1,
+		FailedToConnectToDevice = 2
+	};
+
+	struct ErrorMessage {
+		uint32_t errorCode = 0;
+	};
 #pragma endregion
 
-	void sendErrorMessage(Errors errorType);
 
-	void decodeNetworkMessage(SOCKET& socket);
-
-	void updateBikeList();
 public:
+	void sendErrorMessage(Errors errorType);
 
 	struct BikeDeviceInfo {
 		char ID[12] = { 0 };

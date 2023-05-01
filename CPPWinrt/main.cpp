@@ -23,7 +23,9 @@ using namespace Windows::Storage::Streams;
 
 
 void PrintDevInfoKind(DeviceInformationKind kind);
+bool ConnectDeviceByID(std::string ID, Collections::IObservableVector<winrt::Windows::Foundation::IInspectable>* devList);
 bool ConnectDevice(IDLTesting::BluetoothLEDeviceDisplay& device);
+void DisconnectDevice();
 bool IsConnectableTrainer(IDLTesting::BluetoothLEDeviceDisplay& device);
 
 //LAPTOP Kickr Snap ID
@@ -37,7 +39,7 @@ bool isSubscribed = false;
 
 GattDeviceService currentSelectedService = NULL;
 GattCharacteristic currentSelectedCharacteristic = NULL;
-
+IDLTesting::BluetoothLEDeviceDisplay connectedBike = NULL;
 
 int main()
 {
@@ -58,8 +60,6 @@ int main()
     WinsockHelper winsockHelper;
     winsockHelper.devList = &devList;
 
-    IDLTesting::BluetoothLEDeviceDisplay connectedBike = NULL;
-
     std::vector< std::string> IDs;
     std::vector< std::string> names;
 
@@ -73,6 +73,12 @@ int main()
                 break;
             }
             
+            if (winsockHelper.bikeIDToConnect != "NULL") {
+                if (!ConnectDeviceByID(winsockHelper.bikeIDToConnect, &devList)) {
+                    winsockHelper.sendErrorMessage(WinsockHelper::FailedToConnectToDevice);
+                }
+                winsockHelper.bikeIDToConnect = "NULL";
+            }
 
             if (!isSubscribed) { //If in device selection mode
 
@@ -132,43 +138,7 @@ int main()
                 //else if (inputmessage == "select") {
                 //    printf("Please enter the ID for the device you wish to inspect");
                 //    std::string inSelectedID;
-                //    std::cin >> inSelectedID;
-
-                //    hstring selectedID = to_hstring(inSelectedID);
-                //    bool found = false;
-
-                //    uint32_t size = devList.Size();
-                //    for (uint32_t index = 0; index < size; index++)
-                //    {
-                //        auto inspectDevice = devList.GetAt(index);
-                //        if (inspectDevice != NULL) {
-                //            auto bleDeviceDisplay = inspectDevice.as<IDLTesting::BluetoothLEDeviceDisplay>();
-
-                //            if (bleDeviceDisplay != NULL) {
-                //                if (bleDeviceDisplay.DeviceInformation().Id() == selectedID) {
-                //                    found = true;
-                //                    printf("Device Found:\n\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
-                //                    printf("\tID: %ls", bleDeviceDisplay.DeviceInformation().Id().c_str());
-                //                    PrintDevInfoKind(bleDeviceDisplay.DeviceInformation().Kind());
-                //                    printf("\n");
-
-                //                    if (ConnectDevice(bleDeviceDisplay)) { //Sets all vars used in ReadBuffer to target bleDeviceDisplay
-                //                        printf("ConnectDevice Ran Successfully and has subscirbed\n");
-
-                //                        printf("\n");
-
-                //                        connectedBike = devList.GetAt(index).as<IDLTesting::BluetoothLEDeviceDisplay>();
-                //                        break;
-                //                    }
-                //                    else {
-                //                        printf("ConnectDevice Failed\n");
-                //                        //mustClose = true;
-                //                    }
-                //                    printf("\n");
-                //                }
-                //            }
-                //        }
-                //    }
+                //    std::cin >> inSelectedID;                
                 //}
             }
             else
@@ -186,14 +156,8 @@ int main()
         }
     }
     if (isSubscribed) {
-        GattCommunicationStatus status = currentSelectedCharacteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
-            GattClientCharacteristicConfigurationDescriptorValue::None).get();
-        if (status == GattCommunicationStatus::Success)
-        {
-            printf("Unsubscribed from BT char\n");
-            isSubscribed = false;
-            connectedBike = NULL;
-        }
+        DisconnectDevice();
+        connectedBike = NULL;
     }
 }
 
@@ -230,6 +194,58 @@ void PrintDevInfoKind(DeviceInformationKind kind) {
     default:
         break;
     }
+}
+
+bool ConnectDeviceByID(std::string ID, Collections::IObservableVector<winrt::Windows::Foundation::IInspectable>* devList)
+{
+    printf("Attempting to connect to %s\n", ID.c_str());
+
+    //Disconnect old device
+    if (connectedBike != NULL) {
+        DisconnectDevice();
+        connectedBike = NULL;
+    }
+
+    hstring selectedID = to_hstring(ID);
+    bool found = false;
+
+    uint32_t size = devList->Size();
+    for (uint32_t index = 0; index < size; index++)
+    {
+        //If device is valid
+        auto inspectDevice = devList->GetAt(index);
+        if (inspectDevice != NULL) {
+            auto bleDeviceDisplay = inspectDevice.as<IDLTesting::BluetoothLEDeviceDisplay>();
+            if (bleDeviceDisplay != NULL) {
+
+                //If device is the selected device
+                if (bleDeviceDisplay.DeviceInformation().Id() == selectedID) {
+                    found = true;
+                    printf("Device Found:\n\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
+                    printf("\tID: %ls", bleDeviceDisplay.DeviceInformation().Id().c_str());
+                    PrintDevInfoKind(bleDeviceDisplay.DeviceInformation().Kind());
+                    printf("\n");
+
+                    if (ConnectDevice(bleDeviceDisplay)) { //Sets all vars used in ReadBuffer to target bleDeviceDisplay
+                        printf("ConnectDevice Ran Successfully and has subscirbed\n");
+
+                        connectedBike = devList->GetAt(index).as<IDLTesting::BluetoothLEDeviceDisplay>();
+                        return true;
+                    }
+                    else {
+                        printf("ConnectDevice Failed\n\n");
+                        return false;
+                    }
+                    printf("\n");
+                }
+            }
+        }
+    }
+    if (!found) {
+        printf("ConnectDevice Failed: failed to find device in device list.\n");
+        return false;
+    }
+    return true;
 }
 
 //https://stackoverflow.com/questions/63336568/bluetooth-le-characteristic-values-only-read-once
@@ -358,6 +374,20 @@ bool ConnectDevice(IDLTesting::BluetoothLEDeviceDisplay& device)
          printf("main.cpp: Failed to create device from UUID. Check bluetooth is turned on\n");
      }
     return false;
+}
+
+void DisconnectDevice() {
+    if (isSubscribed) {
+        GattCommunicationStatus status = currentSelectedCharacteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
+            GattClientCharacteristicConfigurationDescriptorValue::None).get();
+        if (status == GattCommunicationStatus::Success)
+        {
+            printf("Unsubscribed from BT char\n");
+            isSubscribed = false;
+            currentSelectedService = NULL;
+            currentSelectedCharacteristic = NULL;
+        }
+    }
 }
 
 bool IsConnectableTrainer(IDLTesting::BluetoothLEDeviceDisplay& device)
