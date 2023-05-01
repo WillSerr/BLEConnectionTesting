@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 
+
 #define SERVERIP "127.0.0.1"
 #define SERVERPORT 5555
 
@@ -40,8 +41,20 @@ private:
 	int eventIndex = 0;
 
 #pragma region NetworkMessageStructs
+	enum MessageType : char{
+		None = 'N',
+		Error = 'E',
+		Power = 'P',
+		AvailableBikes = 'A'
+	};
+
+	enum Errors : uint32_t {
+		Unknown = 0,
+		FailedToCreateFromUUID = 1
+	};
+
 	struct MessageHeader {
-		char type = 'N';
+		MessageType type = MessageType::None;
 		uint32_t messageLengthData = 0;
 	};
 
@@ -53,10 +66,7 @@ private:
 		uint32_t power = 0;
 	};
 
-	enum Errors : uint32_t {
-		Unknown = 0,
-		FailedToCreateFromUUID = 1
-	};
+
 #pragma endregion
 
 	void sendErrorMessage(Errors errorType);
@@ -71,5 +81,7 @@ public:
 	void sendPowerMessage(uint32_t power);
 
 	void sendAvailableBikesMessage(int bikeCount, std::vector<std::string>* IDs, std::vector<std::string>* names);
+
+	void sendNetworkTestingMessages();
 };
 

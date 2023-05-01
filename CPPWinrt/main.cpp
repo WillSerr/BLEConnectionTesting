@@ -109,13 +109,16 @@ int main()
 
                 printf("\n\nSize of list is, %u .\n", devList.Size());
 
-                winsockHelper.sendAvailableBikesMessage(IDs.size(), &IDs, &names);
+                //winsockHelper.sendAvailableBikesMessage(IDs.size(), &IDs, &names);
 
                 std::string inputmessage;
                 std::cin >> inputmessage;
                 if (inputmessage == "stop") {
                     mustClose = true;
                     printf("\n");
+                }
+                else if (inputmessage == "test") {
+                    winsockHelper.sendNetworkTestingMessages();
                 }
                 else if (inputmessage == "select") {
                     printf("Please enter the ID for the device you wish to inspect");
@@ -164,19 +167,7 @@ int main()
                 if (connectedBike) {
                     if (connectedBike.Updated())
                     {
-                        WinsockHelper::MessageContents messageBuffer;
-
-
-                        messageBuffer.powerValue = connectedBike.Power();
-
-
-                        //Send the message to the server.
-                        if (send(winsockHelper.AcceptSocket, (char*)&messageBuffer, sizeof(WinsockHelper::MessageContents), 0) != sizeof(WinsockHelper::MessageContents))
-                        {
-                            //die("send failed");
-                            printf("failed to send");
-                        }
-                        printf("power value: %i", connectedBike.Power());
+                        winsockHelper.sendPowerMessage(connectedBike.Power());
                     }
                 }
             }
