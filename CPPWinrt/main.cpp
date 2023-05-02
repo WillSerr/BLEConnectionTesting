@@ -44,9 +44,8 @@ IDLTesting::BluetoothLEDeviceDisplay connectedBike = NULL;
 int main()
 {
     init_apartment();
-    /* DELETEME
-    Uri uri(L"http://aka.ms/cppwinrt");
-    printf("Hello, %ls!\n", uri.AbsoluteUri().c_str());*/
+
+    printf("Welcome to the intermediary program for Pedal To The Metal!\n\n");
 
     auto watcher = make<IDLTesting::implementation::LiteWatcher>();
     watcher.EnumerateButton_Click();
@@ -77,69 +76,19 @@ int main()
                 if (!ConnectDeviceByID(winsockHelper.bikeIDToConnect, &devList)) {
                     winsockHelper.sendErrorMessage(WinsockHelper::FailedToConnectToDevice);
                 }
+                else {
+                    winsockHelper.sendErrorMessage(WinsockHelper::NoError);
+                }
                 winsockHelper.bikeIDToConnect = "NULL";
             }
 
             if (!isSubscribed) { //If in device selection mode
-
-                //IDs.clear();
-                //names.clear();
-                //uint32_t size = devList.Size();
-                //for (uint32_t index = 0; index < size; index++)
-                //{
-                //    auto inspectDevice = devList.GetAt(index);
-                //    if (inspectDevice != NULL) {
-                //        auto bleDeviceDisplay = inspectDevice.as<IDLTesting::BluetoothLEDeviceDisplay>();
-                //        if (bleDeviceDisplay != NULL) {
-                //            if (IsConnectableTrainer(bleDeviceDisplay))
-                //            {
-                //                printf("Device Found:\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
-                //                printf("\tID: %ls", bleDeviceDisplay.DeviceInformation().Id().c_str());
-                //                PrintDevInfoKind(bleDeviceDisplay.DeviceInformation().Kind());
-                //                printf("\n");
-
-                //                IDs.push_back(to_string(bleDeviceDisplay.DeviceInformation().Id()));
-                //                names.push_back(to_string(bleDeviceDisplay.DeviceInformation().Name()));
-                //                //if (ConnectDevice(bleDeviceDisplay)) { //Sets all vars used in ReadBuffer to target bleDeviceDisplay
-                //                //    printf("ConnectDevice Ran Successfully and has subscirbed\n");
-
-                //                //    printf("\n");
-
-                //                //    connectedBike = devList.GetAt(index).as<IDLTesting::BluetoothLEDeviceDisplay>();
-                //                //    break;
-                //                //}
-                //                //else {
-                //                //    printf("ConnectDevice Failed\n");
-                //                //    mustClose = true;
-                //                //}
-                //                //printf("\n");
-                //                //}
-                //            }
-                //        }
-                //    }
-                //}
 
                 if (devList.Size() != lastSize) {
                     printf("\n\nSize of list is, %u .\n", devList.Size());
                     lastSize = devList.Size();
                 }
 
-                //winsockHelper.sendAvailableBikesMessage(IDs.size(), &IDs, &names);
-
-                //std::string inputmessage;
-                //std::cin >> inputmessage;
-                //if (inputmessage == "stop") {
-                //    mustClose = true;
-                //    printf("\n");
-                //}
-                //else if (inputmessage == "test") {
-                //    winsockHelper.sendNetworkTestingMessages();
-                //}
-                //else if (inputmessage == "select") {
-                //    printf("Please enter the ID for the device you wish to inspect");
-                //    std::string inSelectedID;
-                //    std::cin >> inSelectedID;                
-                //}
             }
             else
             {         
@@ -152,7 +101,7 @@ int main()
             }
         }
         else {
-            winsockHelper.PollForConnection(); //Try connecting to the Game Listen Server
+            winsockHelper.PollForConnection(); //Try connecting to the Game client
         }
     }
     if (isSubscribed) {

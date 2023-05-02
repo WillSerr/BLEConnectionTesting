@@ -93,7 +93,8 @@ public:
 	enum Errors : uint32_t {
 		Unknown = 0,
 		FailedToCreateFromUUID = 1,
-		FailedToConnectToDevice = 2
+		FailedToConnectToDevice = 2,
+		NoError = 3
 	};
 
 	struct ErrorMessage {
