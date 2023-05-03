@@ -119,6 +119,7 @@ namespace winrt::IDLTesting::implementation
     fire_and_forget LiteWatcher::DeviceWatcher_Added(Windows::Devices::Enumeration::DeviceWatcher sender, Windows::Devices::Enumeration::DeviceInformation deviceInfo)
     {
         OutputDebugStringW((L"Added " + deviceInfo.Id() + deviceInfo.Name()).c_str());
+        OutputDebugStringW(L"\n");
 
         // Protect against race condition if the task runs after the app stopped the deviceWatcher.
         if (sender == deviceWatcher)
@@ -126,10 +127,55 @@ namespace winrt::IDLTesting::implementation
             // Make sure device isn't already present in the list.
             if (std::get<0>(FindBluetoothLEDevice(deviceInfo.Id())) == nullptr)
             {
+                bool found = false;
                 if (!deviceInfo.Name().empty())
                 {
-                    // If device has a friendly name display it immediately.
-                    m_knownDevices.Append(make<BluetoothLEDeviceDisplay>(deviceInfo));
+                    auto device = make<BluetoothLEDeviceDisplay>(deviceInfo);
+                    if (device != NULL) {
+                        BluetoothLEDevice bluetoothLeDevice = BluetoothLEDevice::FromIdAsync(device.DeviceInformation().Id()).get(); //.get() makes this no longer Async
+                        if (bluetoothLeDevice != NULL) { //If device successfully created
+
+                            //-----Check if it is a bike trainer
+                            //get device's services
+                            GattDeviceServicesResult result = bluetoothLeDevice.GetGattServicesAsync().get(); //.get() makes this no longer Async
+                            if (result.Status() == GattCommunicationStatus::Success)
+                            {
+                                //store all device services
+                                auto services = result.Services();
+
+                                //loop each services in list
+                                for (auto serv : services)
+                                {
+                                    //get serviceName from service UUID interface
+                                    hstring ServiceName = to_hstring(serv.Uuid()); //Using hstring instead of std::string for compatability with winrt
+
+                                    if (ServiceName.size() >= 9) //Redundant error checking
+                                    {
+                                        std::string nameString = to_string(ServiceName.c_str());
+
+                                        //-----Add bikes to the vector
+                                        if (std::char_traits<char>::compare(nameString.c_str(), "{00001818", 9) == 0) // If Service = Cycle power Service
+                                        {
+                                            // If device has a friendly name display it immediately.
+                                            m_knownDevices.Append(make<BluetoothLEDeviceDisplay>(deviceInfo));
+                                            found = true;
+                                            break;
+                                        }
+                                        else if (std::char_traits<char>::compare(nameString.c_str(), "{00001826", 9) == 0) //If Service = Fitness Machine service
+                                        {
+                                            // If device has a friendly name display it immediately.
+                                            m_knownDevices.Append(make<BluetoothLEDeviceDisplay>(deviceInfo));
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (!found) {
+                        UnknownDevices.push_back(deviceInfo);
+                    }
                 }
                 else
                 {

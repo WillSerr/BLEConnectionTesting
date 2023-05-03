@@ -214,52 +214,53 @@ void WinsockHelper::updateBikeList()
             if (bleDeviceDisplay != NULL) {
                 BluetoothLEDevice bluetoothLeDevice = BluetoothLEDevice::FromIdAsync(bleDeviceDisplay.DeviceInformation().Id()).get(); //.get() makes this no longer Async
                 if (bluetoothLeDevice != NULL) { //If device successfully created
+                    IDs.push_back(to_string(bleDeviceDisplay.DeviceInformation().Id()));
+                    names.push_back(to_string(bleDeviceDisplay.DeviceInformation().Name()));
+                    ////-----Check if it is a bike trainer
+                    ////get device's services
+                    //GattDeviceServicesResult result = bluetoothLeDevice.GetGattServicesAsync().get(); //.get() makes this no longer Async
+                    //if (result.Status() == GattCommunicationStatus::Success)
+                    //{
+                    //    //store all device services
+                    //    services = result.Services();
 
-                    //-----Check if it is a bike trainer
-                    //get device's services
-                    GattDeviceServicesResult result = bluetoothLeDevice.GetGattServicesAsync().get(); //.get() makes this no longer Async
-                    if (result.Status() == GattCommunicationStatus::Success)
-                    {
-                        //store all device services
-                        services = result.Services();
+                    //    //loop each services in list
+                    //    for (auto serv : services)
+                    //    {
+                    //        //get serviceName from service UUID interface
+                    //        hstring ServiceName = to_hstring(serv.Uuid()); //Using hstring instead of std::string for compatability with winrt
 
-                        //loop each services in list
-                        for (auto serv : services)
-                        {
-                            //get serviceName from service UUID interface
-                            hstring ServiceName = to_hstring(serv.Uuid()); //Using hstring instead of std::string for compatability with winrt
+                    //        if (ServiceName.size() >= 9) //Redundant error checking
+                    //        {
+                    //            std::string nameString = to_string(ServiceName.c_str());
 
-                            if (ServiceName.size() >= 9) //Redundant error checking
-                            {
-                                std::string nameString = to_string(ServiceName.c_str());
+                    //            //-----Add bikes to the vector
+                    //            if (std::char_traits<char>::compare(nameString.c_str(), "{00001818", 9) == 0) // If Service = Cycle power Service
+                    //            {
+                    //                IDs.push_back(to_string(bleDeviceDisplay.DeviceInformation().Id()));
+                    //                names.push_back(to_string(bleDeviceDisplay.DeviceInformation().Name()));
 
-                                //-----Add bikes to the vector
-                                if (std::char_traits<char>::compare(nameString.c_str(), "{00001818", 9) == 0) // If Service = Cycle power Service
-                                {
-                                    IDs.push_back(to_string(bleDeviceDisplay.DeviceInformation().Id()));
-                                    names.push_back(to_string(bleDeviceDisplay.DeviceInformation().Name()));
+                    //                printf("Device Found:\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
+                    //                printf("\tID: %ls\n", bleDeviceDisplay.DeviceInformation().Id().c_str());
 
-                                    printf("Device Found:\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
-                                    printf("\tID: %ls\n", bleDeviceDisplay.DeviceInformation().Id().c_str());
+                    //                break;
+                    //            }
+                    //            else if (std::char_traits<char>::compare(nameString.c_str(), "{00001826", 9) == 0) //If Service = Fitness Machine service
+                    //            {
+                    //                IDs.push_back(to_string(bleDeviceDisplay.DeviceInformation().Id()));
+                    //                names.push_back(to_string(bleDeviceDisplay.DeviceInformation().Name()));
 
-                                    break;
-                                }
-                                else if (std::char_traits<char>::compare(nameString.c_str(), "{00001826", 9) == 0) //If Service = Fitness Machine service
-                                {
-                                    IDs.push_back(to_string(bleDeviceDisplay.DeviceInformation().Id()));
-                                    names.push_back(to_string(bleDeviceDisplay.DeviceInformation().Name()));
+                    //                printf("Device Found:\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
+                    //                printf("\tID: %ls\n", bleDeviceDisplay.DeviceInformation().Id().c_str());
 
-                                    printf("Device Found:\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
-                                    printf("\tID: %ls\n", bleDeviceDisplay.DeviceInformation().Id().c_str());
-
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    else {
-                        printf("main.cpp: Failed to retrieve service data from %ls\n", bleDeviceDisplay.DeviceInformation().Name().c_str());
-                    }
+                    //                break;
+                    //            }
+                    //        }
+                    //    }
+                    //}
+                    //else {
+                    //    printf("main.cpp: Failed to retrieve service data from %ls\n", bleDeviceDisplay.DeviceInformation().Name().c_str());
+                    //}
                 }
                 else {
                     printf("main.cpp: Failed to create device from UUID: %ls\nCheck bluetooth is turned on\n", bleDeviceDisplay.DeviceInformation().Id().c_str());
