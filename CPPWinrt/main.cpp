@@ -48,7 +48,7 @@ int main()
     printf("Welcome to the intermediary program for Pedal To The Metal!\n\n");
 
     auto watcher = make<IDLTesting::implementation::LiteWatcher>();
-    watcher.EnumerateButton_Click();
+    
     auto devList = watcher.KnownDevices();
 
 
@@ -58,17 +58,15 @@ int main()
 
     WinsockHelper winsockHelper;
     winsockHelper.devList = &devList;
+    winsockHelper.deviceWatcher = &watcher;
+
+    watcher.EnumerateButton_Click();
+    winsockHelper.enumerating = true;
 
     std::vector< std::string> IDs;
     std::vector< std::string> names;
 
-    for (int i = 0; i < 100; ++i ) {
-        printf("enumerating");
-    }
-    watcher.EnumerateButton_Click();
-
     bool mustClose = false;
-    bool enumerating = true;
     uint32_t lastSize = -1;
     while (!mustClose) {
         
@@ -79,8 +77,10 @@ int main()
             }
             
             if (winsockHelper.bikeIDToConnect != "NULL") {
+                winsockHelper.stopWatcherEnumerating();
                 if (!ConnectDeviceByID(winsockHelper.bikeIDToConnect, &devList)) {
                     winsockHelper.sendErrorMessage(WinsockHelper::FailedToConnectToDevice);
+                    winsockHelper.startWatcherEnumerating();
                 }
                 else {
                     winsockHelper.sendErrorMessage(WinsockHelper::NoError);
@@ -97,9 +97,8 @@ int main()
             }
             else
             {         
-                if (enumerating) {
-                    enumerating = false;
-                    watcher.EnumerateButton_Click();
+                if (winsockHelper.enumerating) { //Redundant check but more readable
+                    winsockHelper.stopWatcherEnumerating();
                 }
                 if (connectedBike) {
                     if (connectedBike.Updated())

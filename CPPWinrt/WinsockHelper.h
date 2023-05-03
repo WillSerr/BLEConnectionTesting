@@ -33,8 +33,13 @@ public:
 	int getClientCount();
 
 	winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::Foundation::IInspectable>* devList;
+	winrt::IDLTesting::LiteWatcher* deviceWatcher;
 
 	std::string bikeIDToConnect = "NULL";
+
+	bool enumerating = true;
+	void stopWatcherEnumerating();
+	void startWatcherEnumerating();
 
 private:
 	void die(const char* message);
@@ -51,6 +56,7 @@ private:
 	WSANETWORKEVENTS NetworkEvents;
 
 	int eventIndex = 0;
+
 
 	void decodeNetworkMessage(SOCKET& socket);
 

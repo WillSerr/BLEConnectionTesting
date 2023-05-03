@@ -148,8 +148,10 @@ void WinsockHelper::decodeNetworkMessage(SOCKET& socket)
         sendNetworkTestingMessages();
         break;
     case WinsockHelper::reqAvailableBikes:
+        stopWatcherEnumerating();
         updateBikeList();
         sendAvailableBikesMessage(IDs.size(),&IDs,&names);
+        startWatcherEnumerating();
         break;
     case WinsockHelper::reqConnect:
         bikeIDToConnect = IDs.at(clientMessage.data);
@@ -171,6 +173,26 @@ using namespace Windows::Devices::Bluetooth;
 using namespace Windows::Devices::Bluetooth::GenericAttributeProfile;
 using namespace Windows::Foundation::Collections;
 
+
+void WinsockHelper::stopWatcherEnumerating()
+{
+    if (deviceWatcher != NULL){
+        if (enumerating) {
+            enumerating = false;
+            deviceWatcher->EnumerateButton_Click();
+        }
+    }   
+}
+
+void WinsockHelper::startWatcherEnumerating()
+{
+    if (deviceWatcher != NULL) {
+        if (!enumerating) {
+            enumerating = true;
+            deviceWatcher->EnumerateButton_Click();
+        }
+    }
+}
 
 void WinsockHelper::updateBikeList()
 {
