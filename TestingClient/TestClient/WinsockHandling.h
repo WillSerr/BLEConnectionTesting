@@ -40,6 +40,7 @@ public:
 
 	std::vector<BikeInfo> allAvailableBikes;
 
+	bool waitingForResponse = false;
 private:
 
 	SOCKET ListenSocket;

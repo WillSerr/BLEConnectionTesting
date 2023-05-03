@@ -18,6 +18,7 @@ int main()
     printf("Enter text commands:\n");
     printf("'connect' to attempt connecting to the WinrtServer.\n");
     printf("'test' to request a network test message.\n");
+    printf("'bikelist' to request an available bikes message.\n");
     printf("'stop' to exit.\n");
     printf("'bikeconnect' to attempt to connect to a bike.\n");
 
@@ -37,18 +38,24 @@ int main()
             if (input == "stop") {
                 running = false;
             }
-            if (input == "connect") {
+            else if (input == "connect") {
                 server.AttemptConnectionToBikeHost();
             }
-            if (input == "test") {
+            else if (input == "test") {
                 printf("Must connect to server first.\n");
             }
-            if (input == "bikeconnect") {
+            else if (input == "bikeconnect") {
+                printf("Must connect to server first.\n");
+            }
+            else if (input == "bikelist") {
                 printf("Must connect to server first.\n");
             }
         }
         else {
-            if (timer <= 0) {
+            if (server.isAwaitingServerResponse()) {
+                server.update(elapsed_seconds.count());
+            }
+            else if (timer <= 0) {
                 input.clear();
                 printf("input->");
                 std::cin >> input;
@@ -75,10 +82,14 @@ int main()
                         server.update(elapsed_seconds.count());
 
                         printf("Requesting...\n");
-                        if (server.requestConnectionToBike(indexInput)) {
-                            timer = 10;
-                            start = std::chrono::steady_clock::now();
-                        }
+                        server.requestConnectionToBike(indexInput);
+                        
+                    }
+                    else if (input == "bikelist") {                      
+
+                        printf("Requesting...\n");
+                        server.getAvailableBikes();
+                        
                     }
                 }
             }

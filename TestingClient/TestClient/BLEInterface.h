@@ -31,7 +31,7 @@ public:
 	void update(float deltaTime);
 
 	bool IsBikeConnected();
-
+	bool isAwaitingServerResponse();
 private:
 
 	WinsockHandling winsockHandler;

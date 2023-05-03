@@ -33,6 +33,9 @@ void WinsockHandling::requestAvailableBikeMsg()
 	{
 		printf("Available Bike request failed to send");
 	}
+	else {
+		waitingForResponse = true;
+	}
 }
 
 void WinsockHandling::requestNetworkTestMsg()
@@ -64,6 +67,7 @@ bool WinsockHandling::requestConnectionToBike(int index)
 		else {
 			bikeToConnect = allAvailableBikes.at(index);
 		}
+		waitingForResponse = true;
 		return true;
 	}
 	else {
@@ -296,6 +300,7 @@ void WinsockHandling::handleErrorMessage(SOCKET& socket)
 		connectedBikeDescription = bikeToConnect;
 		bikeToConnect.ID = "NULL";
 		bikeToConnect.Name = "NULL";
+		waitingForResponse = false;
 	default:
 		break;
 	}
@@ -363,5 +368,6 @@ void WinsockHandling::handleAvailableBikeMessage(SOCKET& socket, int msgSize)
 
 		availableBikeMessageBuffer.shrink_to_fit();
 	}
+	waitingForResponse = false;
 }
 

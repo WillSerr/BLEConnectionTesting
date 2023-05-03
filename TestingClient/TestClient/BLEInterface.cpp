@@ -51,6 +51,11 @@ bool BLEInterface::IsBikeConnected()
 	return winsockHandler.connectedBike.isConnected();
 }
 
+bool BLEInterface::isAwaitingServerResponse()
+{
+	return winsockHandler.waitingForResponse;
+}
+
 void BLEInterface::restartPedalSelectAction(float timeRequired, float delayBeforeStart, int requiredPower)
 {
 	selectProgress = 0.f;

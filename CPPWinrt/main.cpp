@@ -62,7 +62,13 @@ int main()
     std::vector< std::string> IDs;
     std::vector< std::string> names;
 
+    for (int i = 0; i < 100; ++i ) {
+        printf("enumerating");
+    }
+    watcher.EnumerateButton_Click();
+
     bool mustClose = false;
+    bool enumerating = true;
     uint32_t lastSize = -1;
     while (!mustClose) {
         
@@ -84,14 +90,17 @@ int main()
 
             if (!isSubscribed) { //If in device selection mode
 
-                if (devList.Size() != lastSize) {
-                    printf("\n\nSize of list is, %u .\n", devList.Size());
-                    lastSize = devList.Size();
-                }
-
+                //if (devList.Size() != lastSize) {
+                //    printf("\n\nSize of list is, %u .\n", devList.Size());
+                //    lastSize = devList.Size();
+                //}
             }
             else
             {         
+                if (enumerating) {
+                    enumerating = false;
+                    watcher.EnumerateButton_Click();
+                }
                 if (connectedBike) {
                     if (connectedBike.Updated())
                     {
@@ -271,7 +280,7 @@ bool ConnectDevice(IDLTesting::BluetoothLEDeviceDisplay& device)
                                  {
                                     if (isSubscribed == false) {
 
-                                        GattCommunicationStatus status = currentSelectedCharacteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
+                                        GattCommunicationStatus status = chara.WriteClientCharacteristicConfigurationDescriptorAsync(
                                             GattClientCharacteristicConfigurationDescriptorValue::Notify).get(); //.get() makes this no longer Async
 
                                         if (status == GattCommunicationStatus::Success)
