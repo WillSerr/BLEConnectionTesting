@@ -115,7 +115,7 @@ void WinsockHelper::sendErrorMessage(Errors errorType)
     //Send the message to the server.
     if (send(AcceptSocket, (char*)&messageHeader, sizeof(WinsockHelper::MessageHeader), 0) != sizeof(WinsockHelper::MessageHeader))
     {
-        printf("Error message Header failed to send");
+        printf("Error message Header failed to send\n");
     }
 
     WinsockHelper::ErrorMessage messageBuffer;
@@ -123,8 +123,9 @@ void WinsockHelper::sendErrorMessage(Errors errorType)
     //Send the message to the server.
     if (send(AcceptSocket, (char*)&messageBuffer, sizeof(WinsockHelper::ErrorMessage), 0) != sizeof(WinsockHelper::ErrorMessage))
     {
-        printf("Error message body failed to send");
+        printf("Error message body failed to send\n");
     }
+    printf("Error message sent\n");
 }
 
 void WinsockHelper::decodeNetworkMessage(SOCKET& socket)
@@ -148,10 +149,8 @@ void WinsockHelper::decodeNetworkMessage(SOCKET& socket)
         sendNetworkTestingMessages();
         break;
     case WinsockHelper::reqAvailableBikes:
-        stopWatcherEnumerating();
         updateBikeList();
         sendAvailableBikesMessage(IDs.size(),&IDs,&names);
-        startWatcherEnumerating();
         break;
     case WinsockHelper::reqConnect:
         bikeIDToConnect = IDs.at(clientMessage.data);
@@ -207,6 +206,9 @@ void WinsockHelper::updateBikeList()
     uint32_t size = devList->Size();
     for (uint32_t index = 0; index < size; index++) //-----Go through every device
     {
+        if (index >= devList->Size()) {
+            break;
+        }
         //-----If the device is valid
         auto inspectDevice = devList->GetAt(index);
         if (inspectDevice != NULL) {
@@ -216,51 +218,6 @@ void WinsockHelper::updateBikeList()
                 if (bluetoothLeDevice != NULL) { //If device successfully created
                     IDs.push_back(to_string(bleDeviceDisplay.DeviceInformation().Id()));
                     names.push_back(to_string(bleDeviceDisplay.DeviceInformation().Name()));
-                    ////-----Check if it is a bike trainer
-                    ////get device's services
-                    //GattDeviceServicesResult result = bluetoothLeDevice.GetGattServicesAsync().get(); //.get() makes this no longer Async
-                    //if (result.Status() == GattCommunicationStatus::Success)
-                    //{
-                    //    //store all device services
-                    //    services = result.Services();
-
-                    //    //loop each services in list
-                    //    for (auto serv : services)
-                    //    {
-                    //        //get serviceName from service UUID interface
-                    //        hstring ServiceName = to_hstring(serv.Uuid()); //Using hstring instead of std::string for compatability with winrt
-
-                    //        if (ServiceName.size() >= 9) //Redundant error checking
-                    //        {
-                    //            std::string nameString = to_string(ServiceName.c_str());
-
-                    //            //-----Add bikes to the vector
-                    //            if (std::char_traits<char>::compare(nameString.c_str(), "{00001818", 9) == 0) // If Service = Cycle power Service
-                    //            {
-                    //                IDs.push_back(to_string(bleDeviceDisplay.DeviceInformation().Id()));
-                    //                names.push_back(to_string(bleDeviceDisplay.DeviceInformation().Name()));
-
-                    //                printf("Device Found:\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
-                    //                printf("\tID: %ls\n", bleDeviceDisplay.DeviceInformation().Id().c_str());
-
-                    //                break;
-                    //            }
-                    //            else if (std::char_traits<char>::compare(nameString.c_str(), "{00001826", 9) == 0) //If Service = Fitness Machine service
-                    //            {
-                    //                IDs.push_back(to_string(bleDeviceDisplay.DeviceInformation().Id()));
-                    //                names.push_back(to_string(bleDeviceDisplay.DeviceInformation().Name()));
-
-                    //                printf("Device Found:\tName: %ls", bleDeviceDisplay.DeviceInformation().Name().c_str());
-                    //                printf("\tID: %ls\n", bleDeviceDisplay.DeviceInformation().Id().c_str());
-
-                    //                break;
-                    //            }
-                    //        }
-                    //    }
-                    //}
-                    //else {
-                    //    printf("main.cpp: Failed to retrieve service data from %ls\n", bleDeviceDisplay.DeviceInformation().Name().c_str());
-                    //}
                 }
                 else {
                     printf("main.cpp: Failed to create device from UUID: %ls\nCheck bluetooth is turned on\n", bleDeviceDisplay.DeviceInformation().Id().c_str());
@@ -291,31 +248,34 @@ void WinsockHelper::sendPowerMessage(uint32_t power)
 
 void WinsockHelper::sendAvailableBikesMessage(int bikeCount, std::vector<std::string>* IDs, std::vector<std::string>* names)
 {
-    std::string messageBody;
-    for (int i = 0; i < bikeCount; i++) {
-        std::string ID = IDs->at(i).substr(41, 17);
-        
-        std::string bikeData = ID + names->at(i) + '¬';
-        messageBody.append(bikeData);
-    }
 
-    WinsockHelper::MessageHeader messageHeader;
-    messageHeader.type = MessageType::AvailableBikes;
-    messageHeader.messageLengthData = messageBody.size();
-    //Send the message header to the Game.
-    if (send(AcceptSocket, (char*)&messageHeader, sizeof(WinsockHelper::MessageHeader), 0) != sizeof(WinsockHelper::MessageHeader))
-    {
-        printf("Available Bike message Header failed to send\n");
-    }
+        std::string messageBody;
+        for (int i = 0; i < bikeCount; i++) {
+            std::string ID = IDs->at(i).substr(41, 17);
 
-    //Send the message body to the Game.
-    if (send(AcceptSocket, (char*)messageBody.c_str(), messageBody.size(), 0) != messageBody.size())
-    {
-        printf("Available Bike message body failed to send\n");
-    }
-    printf("Sent Bike string: %s\n", messageBody.c_str());
+            std::string bikeData = ID + names->at(i) + '¬';
+            messageBody.append(bikeData);
+        }
 
+        WinsockHelper::MessageHeader messageHeader;
+        messageHeader.type = MessageType::AvailableBikes;
+        messageHeader.messageLengthData = messageBody.size();
+        //Send the message header to the Game.
+        if (send(AcceptSocket, (char*)&messageHeader, sizeof(WinsockHelper::MessageHeader), 0) != sizeof(WinsockHelper::MessageHeader))
+        {
+            printf("Available Bike message Header failed to send\n");
+        }
+        printf("Sent Bike string Header, %c:%i\t", messageHeader.type, messageHeader.messageLengthData);
 
+        if (bikeCount > 0) {
+        //Send the message body to the Game.
+        if (send(AcceptSocket, (char*)messageBody.c_str(), messageBody.size(), 0) != messageBody.size())
+        {
+            printf("Available Bike message body failed to send\n");
+        }
+        printf("Sent Bike string: %s\n", messageBody.c_str());
+
+        }
 }
 
 void WinsockHelper::sendNetworkTestingMessages()

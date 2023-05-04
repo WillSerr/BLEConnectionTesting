@@ -243,6 +243,13 @@ void WinsockHandling::decodeNetworkMessage(SOCKET& socket)
 
 		expectedMessageType = messageHeader.type;
 		expectedMessageSize = messageHeader.messageLengthData;
+
+		if (messageHeader.type == AvailableBikes && messageHeader.messageLengthData == 0) {
+			expectedMessageType = None;
+			expectedMessageSize = 0;
+			waitingForResponse = false;
+			printf("There are no bikes.\n");
+		}
 	}
 	else {
 		switch (expectedMessageType)

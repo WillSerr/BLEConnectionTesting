@@ -77,10 +77,10 @@ int main()
             }
             
             if (winsockHelper.bikeIDToConnect != "NULL") {
-                winsockHelper.stopWatcherEnumerating();
+                //winsockHelper.stopWatcherEnumerating();
                 if (!watcher.SubscribeToPowerData(to_hstring(winsockHelper.bikeIDToConnect))) {
                     winsockHelper.sendErrorMessage(WinsockHelper::FailedToConnectToDevice);
-                    winsockHelper.startWatcherEnumerating();
+                    //winsockHelper.startWatcherEnumerating();
                 }
                 else {
                     winsockHelper.sendErrorMessage(WinsockHelper::NoError);
@@ -97,9 +97,9 @@ int main()
             }
             else
             {         
-                if (winsockHelper.enumerating) { //Redundant check but more readable
-                    winsockHelper.stopWatcherEnumerating();
-                }
+                //if (winsockHelper.enumerating) { //Redundant check but more readable
+                //    winsockHelper.stopWatcherEnumerating();
+                //}
                 if (connectedBike) {
                     if (connectedBike.Updated())
                     {

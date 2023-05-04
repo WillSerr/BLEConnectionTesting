@@ -48,6 +48,10 @@ namespace winrt::IDLTesting::implementation
 
     bool LiteWatcher::SubscribeToPowerData(hstring const& Id)
     {
+        if (std::get<0>(FindBluetoothLEDevice(Id)) == nullptr) {
+            printf("LiteWatcher: Device not found\n\n");
+            return false;
+        }
         if (!UnSubscribeToPowerData()) {
             printf("LiteWatcher: failed to unsubscribe from previous Device\n\n");
             return false;
