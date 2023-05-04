@@ -59,14 +59,15 @@ namespace winrt::IDLTesting::implementation
 
 
         void NotifyOnCharacteristicChange(winrt::Windows::Devices::Bluetooth::GenericAttributeProfile::GattCharacteristic const& sender);
-        //void PropertyChanged(event_token const& token) noexcept;
+        
+        void StopNotifyOnCharacteristicChange();
 
     private:
         Windows::Devices::Enumeration::DeviceInformation m_deviceInformation{ nullptr };
         fire_and_forget characteristicNotification(GattCharacteristic sender,
             GattValueChangedEventArgs args);
         event_token NotifyToken;
-        winrt::Windows::Devices::Bluetooth::GenericAttributeProfile::GattCharacteristic const* currentSubscribedCharacteristic;
+        winrt::Windows::Devices::Bluetooth::GenericAttributeProfile::GattCharacteristic const* currentSubscribedCharacteristic{ nullptr };
         //event<Windows::UI::Xaml::Data::PropertyChangedEventHandler> m_propertyChanged;
 
         //void OnPropertyChanged(param::hstring const& property);

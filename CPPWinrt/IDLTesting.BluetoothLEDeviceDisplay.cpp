@@ -26,23 +26,23 @@ namespace winrt::IDLTesting::implementation
     void BluetoothLEDeviceDisplay::Update(winrt::Windows::Devices::Enumeration::DeviceInformationUpdate const& deviceInfoUpdate)
     {
         m_deviceInformation.Update(deviceInfoUpdate);
-
-        //OnPropertyChanged(L"Id");
-        //OnPropertyChanged(L"Name");
-        //OnPropertyChanged(L"DeviceInformation");
-        //OnPropertyChanged(L"IsPaired");
-        //OnPropertyChanged(L"IsConnected");
-        //OnPropertyChanged(L"Properties");
-        //OnPropertyChanged(L"IsConnectable");
-
-        //UpdateGlyphBitmapImage();
     }
 
     void BluetoothLEDeviceDisplay::NotifyOnCharacteristicChange(winrt::Windows::Devices::Bluetooth::GenericAttributeProfile::GattCharacteristic const& sender)
     {
-        currentSubscribedCharacteristic = &sender;
-        //NotifyToken = sender.ValueChanged({ get_weak(), &BluetoothLEDeviceDisplay::characteristicNotification });
-        NotifyToken = sender.ValueChanged({ this, &BluetoothLEDeviceDisplay::characteristicNotification }); //As per microsoft docs https://learn.microsoft.com/en-us/windows/uwp/cpp-and-winrt-apis/handle-events
+        if (currentSubscribedCharacteristic == nullptr) {
+            currentSubscribedCharacteristic = &sender;
+            //NotifyToken = sender.ValueChanged({ get_weak(), &BluetoothLEDeviceDisplay::characteristicNotification });
+            NotifyToken = sender.ValueChanged({ this, &BluetoothLEDeviceDisplay::characteristicNotification }); //As per microsoft docs https://learn.microsoft.com/en-us/windows/uwp/cpp-and-winrt-apis/handle-events
+        }
+    }
+
+    void BluetoothLEDeviceDisplay::StopNotifyOnCharacteristicChange()
+    {
+        if (currentSubscribedCharacteristic != nullptr) {
+            currentSubscribedCharacteristic->ValueChanged(NotifyToken);
+            currentSubscribedCharacteristic = nullptr;
+        }
     }
 
     fire_and_forget BluetoothLEDeviceDisplay::characteristicNotification(GattCharacteristic sender, GattValueChangedEventArgs args)

@@ -78,7 +78,7 @@ int main()
             
             if (winsockHelper.bikeIDToConnect != "NULL") {
                 winsockHelper.stopWatcherEnumerating();
-                if (!ConnectDeviceByID(winsockHelper.bikeIDToConnect, &devList)) {
+                if (!watcher.SubscribeToPowerData(to_hstring(winsockHelper.bikeIDToConnect))) {
                     winsockHelper.sendErrorMessage(WinsockHelper::FailedToConnectToDevice);
                     winsockHelper.startWatcherEnumerating();
                 }

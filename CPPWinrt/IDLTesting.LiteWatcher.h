@@ -17,6 +17,9 @@ namespace winrt::IDLTesting::implementation
         void PairButton_Click();
         bool Not(bool value);
 
+        bool SubscribeToPowerData(hstring const& Id);
+        bool UnSubscribeToPowerData();
+
     private:
         Windows::Foundation::Collections::IObservableVector<Windows::Foundation::IInspectable> m_knownDevices = single_threaded_observable_vector<Windows::Foundation::IInspectable>();
         std::vector<Windows::Devices::Enumeration::DeviceInformation> UnknownDevices;
@@ -27,6 +30,8 @@ namespace winrt::IDLTesting::implementation
         event_token deviceWatcherEnumerationCompletedToken;
         event_token deviceWatcherStoppedToken;
 
+        Windows::Devices::Bluetooth::BluetoothLEDevice bluetoothLeDevice{ nullptr };
+        Windows::Devices::Bluetooth::GenericAttributeProfile::GattCharacteristic selectedCharacteristic{ nullptr };
         void StartBleDeviceWatcher();
         void StopBleDeviceWatcher();
         std::tuple<winrt::IDLTesting::BluetoothLEDeviceDisplay, uint32_t> FindBluetoothLEDevice(hstring const& id);

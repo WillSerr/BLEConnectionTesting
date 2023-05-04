@@ -28,6 +28,8 @@ namespace IDLTesting
         void EnumerateButton_Click();
         void PairButton_Click();
         Boolean Not(Boolean value);
+        Boolean SubscribeToPowerData(String Id);
+        Boolean UnSubscribeToPowerData();
     }
 
     /// <summary>
@@ -50,5 +52,6 @@ namespace IDLTesting
         void Update(Windows.Devices.Enumeration.DeviceInformationUpdate deviceInfoUpdate);
 
         void NotifyOnCharacteristicChange(Windows.Devices.Bluetooth.GenericAttributeProfile.GattCharacteristic sender);
+        void StopNotifyOnCharacteristicChange();
     };
 }
