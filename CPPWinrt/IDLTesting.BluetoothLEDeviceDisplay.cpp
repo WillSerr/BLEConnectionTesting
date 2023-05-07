@@ -31,6 +31,23 @@ namespace winrt::IDLTesting::implementation
     void BluetoothLEDeviceDisplay::NotifyOnCharacteristicChange(winrt::Windows::Devices::Bluetooth::GenericAttributeProfile::GattCharacteristic const& sender)
     {
         if (currentSubscribedCharacteristic == nullptr) {
+            
+            //TESTING: does pairing remove the responsiveness problems
+            printf("Attempting pair...\n");
+            Windows::Devices::Enumeration::DevicePairingResult result = m_deviceInformation.Pairing().PairAsync().get();
+            Windows::Devices::Enumeration::DevicePairingResultStatus status = result.Status();
+            if (status == Windows::Devices::Enumeration::DevicePairingResultStatus::Paired) {
+                printf("Pairing successfull\n");
+            }
+            else {                
+                printf("Pairing unsuccessfull.");
+                if (status == Windows::Devices::Enumeration::DevicePairingResultStatus::AlreadyPaired) {
+                    printf(" Already Paired.");
+                }
+                printf("\n");
+            }
+            
+
             currentSubscribedCharacteristic = sender;
             NotifyToken = sender.ValueChanged({ this, &BluetoothLEDeviceDisplay::characteristicNotification }); //As per microsoft docs https://learn.microsoft.com/en-us/windows/uwp/cpp-and-winrt-apis/handle-events
         }
@@ -39,6 +56,23 @@ namespace winrt::IDLTesting::implementation
     void BluetoothLEDeviceDisplay::StopNotifyOnCharacteristicChange()
     {
         if (currentSubscribedCharacteristic != nullptr) {
+
+            //TESTING: does pairing remove the responsiveness problems
+            printf("Attempting pair...\n");
+            Windows::Devices::Enumeration::DeviceUnpairingResult result = m_deviceInformation.Pairing().UnpairAsync().get();
+            Windows::Devices::Enumeration::DeviceUnpairingResultStatus status = result.Status();
+            if (status == Windows::Devices::Enumeration::DeviceUnpairingResultStatus::Unpaired) {
+                printf("Pairing successfull\n");
+            }
+            else {
+                printf("Pairing unsuccessfull.");
+                if (status == Windows::Devices::Enumeration::DeviceUnpairingResultStatus::AlreadyUnpaired) {
+                    printf(" Already Unpaired.");
+                }
+                printf("\n");
+            }
+
+
             currentSubscribedCharacteristic.ValueChanged(NotifyToken);
             currentSubscribedCharacteristic = nullptr;
         }
