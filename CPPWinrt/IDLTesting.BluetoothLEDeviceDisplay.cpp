@@ -31,8 +31,7 @@ namespace winrt::IDLTesting::implementation
     void BluetoothLEDeviceDisplay::NotifyOnCharacteristicChange(winrt::Windows::Devices::Bluetooth::GenericAttributeProfile::GattCharacteristic const& sender)
     {
         if (currentSubscribedCharacteristic == nullptr) {
-            currentSubscribedCharacteristic = &sender;
-            //NotifyToken = sender.ValueChanged({ get_weak(), &BluetoothLEDeviceDisplay::characteristicNotification });
+            currentSubscribedCharacteristic = sender;
             NotifyToken = sender.ValueChanged({ this, &BluetoothLEDeviceDisplay::characteristicNotification }); //As per microsoft docs https://learn.microsoft.com/en-us/windows/uwp/cpp-and-winrt-apis/handle-events
         }
     }
@@ -40,7 +39,7 @@ namespace winrt::IDLTesting::implementation
     void BluetoothLEDeviceDisplay::StopNotifyOnCharacteristicChange()
     {
         if (currentSubscribedCharacteristic != nullptr) {
-            currentSubscribedCharacteristic->ValueChanged(NotifyToken);
+            currentSubscribedCharacteristic.ValueChanged(NotifyToken);
             currentSubscribedCharacteristic = nullptr;
         }
     }
@@ -61,26 +60,25 @@ namespace winrt::IDLTesting::implementation
             uint8_t flags[2] = { 11,11 };
             dataReader.ReadBytes(flags);
             printf("Flags:  %x %x \t", flags[0], flags[1]);
-            power = dataReader.ReadUInt16();
-            printf("Instantaneous Power:  %u \t", power);
+            uint16_t newPower = dataReader.ReadUInt16();
+            power = newPower;
+            printf("Instantaneous Power:  %u \t", power);           
 
-           
-
-            if ((flags[0]>>7) & 1) {
-                printf("Pedal Power Balance in 0.5%s:  %u \t", dataReader.ReadByte()); // For double crank systems
-            }
-            if ((flags[0] >> 5) & 1) {
-                printf("Accumulated Torque :  %u \t", dataReader.ReadUInt16());
-            }
-            if ((flags[0] >> 3) & 1) {
-                printf("Cumulative Wheel Revolutions :  %u \t", dataReader.ReadUInt32());
-                printf("Last Wheel Event Time :  %u \t", dataReader.ReadUInt16());                
-            }
-            if ((flags[0] >> 2) & 1) {
-                printf("Cumulative Crank Revolutions :  %u \t", dataReader.ReadUInt16());
-                printf("Last Crank Event Time :  %u \t", dataReader.ReadUInt16());
-            }
-            //etc, there are a lot of these and I'm pretty sure none of them are usefull
+            //if ((flags[0]>>7) & 1) {
+            //    printf("Pedal Power Balance in 0.5%s:  %u \t", dataReader.ReadByte()); // For double crank systems
+            //}
+            //if ((flags[0] >> 5) & 1) {
+            //    printf("Accumulated Torque :  %u \t", dataReader.ReadUInt16());
+            //}
+            //if ((flags[0] >> 3) & 1) {
+            //    printf("Cumulative Wheel Revolutions :  %u \t", dataReader.ReadUInt32());
+            //    printf("Last Wheel Event Time :  %u \t", dataReader.ReadUInt16());                
+            //}
+            //if ((flags[0] >> 2) & 1) {
+            //    printf("Cumulative Crank Revolutions :  %u \t", dataReader.ReadUInt16());
+            //    printf("Last Crank Event Time :  %u \t", dataReader.ReadUInt16());
+            //}
+            //etc, there are a lot of these. None of them are usefull but this approach can be copied if expanding into FTMS
 
         }
         else {
@@ -88,23 +86,6 @@ namespace winrt::IDLTesting::implementation
         }
         printf("\n");
 
-        //Dump the raw data into console
-        /*printf("byte count: %u \tData - [", bufflen);
-        while (dataReader.UnconsumedBufferLength() > 0) {
-            dataReader.ByteOrder(Windows::Storage::Streams::ByteOrder::BigEndian);
-            uint8_t flags = 0;
-            flags = dataReader.ReadByte();
-            printf("%x,", flags);
-        }
-        printf("]\n");*/
-
         co_return;// fire_and_forget();
     }
-
-    //bool BluetoothLEDeviceDisplay::LookupBooleanProperty(param::hstring const& property)
-    //{
-    //    auto value = m_deviceInformation.Properties().TryLookup(property);
-    //    return value && unbox_value<bool>(value);
-    //}
-
 }

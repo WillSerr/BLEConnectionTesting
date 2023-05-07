@@ -67,7 +67,7 @@ namespace winrt::IDLTesting::implementation
         fire_and_forget characteristicNotification(GattCharacteristic sender,
             GattValueChangedEventArgs args);
         event_token NotifyToken;
-        winrt::Windows::Devices::Bluetooth::GenericAttributeProfile::GattCharacteristic const* currentSubscribedCharacteristic{ nullptr };
+        winrt::Windows::Devices::Bluetooth::GenericAttributeProfile::GattCharacteristic currentSubscribedCharacteristic{ nullptr };
         //event<Windows::UI::Xaml::Data::PropertyChangedEventHandler> m_propertyChanged;
 
         //void OnPropertyChanged(param::hstring const& property);

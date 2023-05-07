@@ -15,13 +15,29 @@ namespace winrt::IDLTesting::implementation
         std::cout << "IM ALIVE!\n\n";
     }
     LiteWatcher::~LiteWatcher() {
-        
+        UnSubscribeToPowerData();
         if (deviceWatcher != nullptr)
         {
             StopBleDeviceWatcher();
             std::cout << "Enumration Stopped\n";
         }
         std::cout << "IM DEAD!\n\n";
+    }
+
+
+    bool LiteWatcher::BikeConnected()
+    {
+        return bluetoothLeDeviceDisplay != nullptr;
+    }
+
+    bool LiteWatcher::BikeUpdated()
+    {        
+        return bluetoothLeDeviceDisplay.Updated();
+    }
+
+    int16_t LiteWatcher::BikePower()
+    {
+        return bluetoothLeDeviceDisplay.Power();
     }
 
     void LiteWatcher::EnumerateButton_Click()
@@ -37,108 +53,112 @@ namespace winrt::IDLTesting::implementation
             std::cout << "Enumration Stopped\n";
         }
     }
-    void LiteWatcher::PairButton_Click()
-    {
-        throw hresult_not_implemented();
-    }
-    bool LiteWatcher::Not(bool value)
-    {
-        throw hresult_not_implemented();
-    }
 
     bool LiteWatcher::SubscribeToPowerData(hstring const& Id)
     {
-        if (std::get<0>(FindBluetoothLEDevice(Id)) == nullptr) {
+        if (std::get<0>(FindBluetoothLEDevice(Id)) == nullptr) {    //If valid ID
             printf("LiteWatcher: Device not found\n\n");
             return false;
         }
-        if (!UnSubscribeToPowerData()) {
+        if (!UnSubscribeToPowerData()) {    //Remove previous subscription
             printf("LiteWatcher: failed to unsubscribe from previous Device\n\n");
             return false;
         }
 
-        // BT_Code: BluetoothLEDevice.FromIdAsync must be called from a UI thread because it may prompt for consent.
-        bluetoothLeDevice = BluetoothLEDevice::FromIdAsync(Id).get();
+
+        auto newBluetoothLeDevice = BluetoothLEDevice::FromIdAsync(Id).get();      //No non-async alternative
 
         //get device's services
-        //GattDeviceServicesResult result = bluetoothLeDevice.GetGattServicesAsync().get(); //.get() makes this no longer Async
-        GattDeviceServicesResult result = bluetoothLeDevice.GetGattServicesAsync().get();
+        GattDeviceServicesResult result = newBluetoothLeDevice.GetGattServicesAsync().get();    //No non-async alternative, not inherently threadsafe
 
         if (result.Status() == GattCommunicationStatus::Success)
         {
+            printf("GetService Successfull\n");
+
             //store all device services
             auto services = result.Services();
 
-            //loop each services in list
+            bool foundService = false;
+            //loop each services in list searching for Cycling Power Service
             for (GattDeviceService serv : services)
             {
-
-                //Search for Cycling Power Service
                 if (serv.Uuid() == GattServiceUuids::CyclingPower())
                 {
-                    //get all characteristics from current service
-                    GattCharacteristicsResult resultCharacteristics = serv.GetCharacteristicsAsync().get();//.get() makes this no longer Async
 
-                    //verify if getting characteristics is success 
+                    printf("GetCyclingPowerService Successfull\n");
+
+                    //get all characteristics from current service
+                    GattCharacteristicsResult resultCharacteristics = serv.GetCharacteristicsAsync().get();
+
+                    //verify if getting characteristics was successfull
                     if (resultCharacteristics.Status() == GattCommunicationStatus::Success)
                     {
+
+                        printf("GetCharacteristics Successfull\n");
                         //store device services to list
                         auto characteristics = resultCharacteristics.Characteristics();
+                        
+                        bool foundCharacteristic = false;                        
 
-                        //loop through its characteristics
+                        //loop through its characteristics searching for Cycling Power Measurement characteristi
                         for (GattCharacteristic chara : characteristics)
                         {
-
-                            //Search for Cycling Power Measurement characteristic
                             if (chara.Uuid() == GattCharacteristicUuids::CyclingPowerMeasurement())
                             {
-                                //store the current characteristic
-                                selectedCharacteristic = chara;
-
+                                printf("GetCyclingPowerMeasurementCharacteristics Successfull\n");                                
+                                
                                 GattCharacteristicProperties properties = chara.CharacteristicProperties();
 
-                                ////Probably a bette way of doing the code below
-                                /*if ((properties & GattCharacteristicProperties::Notify) == GattCharacteristicProperties::Notify) {
-
-                                }*/
-
-                                //if selected characteristics has notify property
-                                if (static_cast<uint32_t>(properties) & static_cast<uint32_t>(GattCharacteristicProperties::Notify)) //properties.HasFlag(GattCharacteristicProperties::Notify)
+                                if ((properties & GattCharacteristicProperties::Notify) == GattCharacteristicProperties::Notify)
                                 {
-                                    GattCommunicationStatus status = chara.WriteClientCharacteristicConfigurationDescriptorAsync(
-                                        GattClientCharacteristicConfigurationDescriptorValue::Notify).get(); //.get() makes this no longer Async
 
+                                    printf("Subscribing to notification\n");
+                                    GattCommunicationStatus status = chara.WriteClientCharacteristicConfigurationDescriptorAsync(
+                                        GattClientCharacteristicConfigurationDescriptorValue::Notify).get();
+                                    
+                                    printf("Checking if subscription was successfull\n");   //For identifying if the program is hanging on WritingCharDescriptor
                                     if (status == GattCommunicationStatus::Success)
                                     {
                                         // Server has been informed of clients interest.
                                         printf("LiteWatcher: Subscribed to notification\n\n");
-                                        std::get<0>(FindBluetoothLEDevice(Id)).NotifyOnCharacteristicChange(chara);
+
+                                        bluetoothLeDeviceDisplay = std::get<0>(FindBluetoothLEDevice(Id));
+                                        bluetoothLeDeviceDisplay.NotifyOnCharacteristicChange(chara);
+                                        selectedCharacteristic = chara;
+                                        bluetoothLeDevice = newBluetoothLeDevice;
+
                                         return true;
+
+                                        foundCharacteristic = true;
                                     }
                                     else
                                     {
                                         printf("LiteWatcher: Failed to subscribe to notification\n\n");
-                                        return false;
+                                        foundCharacteristic = false;
                                     }
                                     
                                 }
-                                printf("LiteWatcher: CyclingPowerMeasurement cannot notify\n\n");
-                                return false;
+                                else {
+                                    printf("LiteWatcher: CyclingPowerMeasurement cannot notify\n\n");                                    
+                                }
                             }
                         }
-                        printf("LiteWatcher: Could not find Cycling power measurement characteristic on device\n\n");
-                        return false;
+
+                        if (!foundCharacteristic) {
+                            printf("LiteWatcher: Could not find Cycling power measurement characteristic on device\n\n");
+                        }
                         
                     }
                     else { 
-                        printf("LiteWatcher: Failed to retrieve characteristics data\n\n");
-                        return false;
+                        printf("LiteWatcher: Failed to retrieve characteristics data\n");
+                        printf("Status Message: %i\n\n", resultCharacteristics.Status());                        
                     }
 
                 }
             }
-            printf("Could not find Cycling Power Service on device\n\n");
-            return false;
+            if (!foundService) {
+                printf("Could not find Cycling Power Service on device\n\n");
+            }
         }
         return false;
     }
@@ -158,7 +178,8 @@ namespace winrt::IDLTesting::implementation
                 {
                     // Server has been informed of clients interest.
                     printf("LiteWatcher: UnSubscribed to notification\n\n");
-                    std::get<0>(FindBluetoothLEDevice(bluetoothLeDevice.BluetoothDeviceId().Id())).StopNotifyOnCharacteristicChange();
+                    bluetoothLeDeviceDisplay.StopNotifyOnCharacteristicChange();
+                    bluetoothLeDeviceDisplay = nullptr;
                     bluetoothLeDevice = nullptr;
                     selectedCharacteristic = nullptr;
                     return true;
@@ -172,10 +193,7 @@ namespace winrt::IDLTesting::implementation
             }            
             return false;
         }
-        else if (selectedCharacteristic != nullptr || bluetoothLeDevice != nullptr) {
-            return false;
-        }
-        return true;
+        return false;        
     }
 
     void LiteWatcher::StartBleDeviceWatcher()
@@ -261,64 +279,19 @@ namespace winrt::IDLTesting::implementation
             // Make sure device isn't already present in the list.
             if (std::get<0>(FindBluetoothLEDevice(deviceInfo.Id())) == nullptr)
             {
-                bool found = false;
-                if (!deviceInfo.Name().empty())
-                {                    
-                    //BluetoothLEDevice bluetoothLeDevice = BluetoothLEDevice::FromIdAsync(device.DeviceInformation().Id()).get(); //.get() makes this no longer Async
-                    BluetoothLEDevice bluetoothLeDevice = co_await BluetoothLEDevice::FromIdAsync(deviceInfo.Id()); //.get() makes this no longer Async
-
-                    if (bluetoothLeDevice != NULL) { //If device successfully created
-
-                        //-----Check if it is a bike trainer
-                        //get device's services
-                        //GattDeviceServicesResult result = bluetoothLeDevice.GetGattServicesAsync().get(); //.get() makes this no longer Async
-                        GattDeviceServicesResult result = co_await bluetoothLeDevice.GetGattServicesAsync();
-
-                        if (result.Status() == GattCommunicationStatus::Success)
-                        {
-                            //store all device services
-                            auto services = result.Services();
-
-                            //loop each services in list
-                            for (auto serv : services)
-                            {
-                                //get serviceName from service UUID interface
-                                hstring ServiceName = to_hstring(serv.Uuid()); //Using hstring instead of std::string for compatability with winrt
-
-                                if (ServiceName.size() >= 9) //Redundant error checking
-                                {
-                                    std::string nameString = to_string(ServiceName.c_str());
-
-                                    //-----Add bikes to the vector
-                                    if (serv.Uuid() == GattServiceUuids::CyclingPower())// If Service = Cycle power Service
-                                    {
-                                        // If device has a friendly name display it immediately.
-                                        m_knownDevices.Append(make<BluetoothLEDeviceDisplay>(deviceInfo));
-                                        found = true;
-                                        break;
-                                    }
-                                    // NOT IMPLEMENTED YET
-                                    //else if (std::char_traits<char>::compare(nameString.c_str(), "{00001826", 9) == 0) //If Service = Fitness Machine service
-                                    //{
-                                    //    // If device has a friendly name display it immediately.
-                                    //    m_knownDevices.Append(make<BluetoothLEDeviceDisplay>(deviceInfo));
-                                    //    found = true;
-                                    //    break;
-                                    //}
-                                }
-                            }
-                        }
+                if (FindUnknownDevices(deviceInfo.Id()) == UnknownDevices.end()) 
+                {
+                    if (!deviceInfo.Name().empty())
+                    {
+                        m_knownDevices.Append(make<BluetoothLEDeviceDisplay>(deviceInfo));
                         
                     }
-                    if (!found) {
+                    else
+                    {
+                        // Add it to a list in case the name gets updated later. 
                         UnknownDevices.push_back(deviceInfo);
                     }
-                }
-                else
-                {
-                    // Add it to a list in case the name gets updated later. 
-                    UnknownDevices.push_back(deviceInfo);
-                }
+                }                
             }
         }
         co_return;
@@ -326,17 +299,13 @@ namespace winrt::IDLTesting::implementation
 
     fire_and_forget LiteWatcher::DeviceWatcher_Updated(DeviceWatcher sender, DeviceInformationUpdate deviceInfoUpdate)
     {
-
-        OutputDebugStringW((L"Updated " + deviceInfoUpdate.Id()).c_str());
-        OutputDebugStringW(L"\n");
-
         // Protect against race condition if the task runs after the app stopped the deviceWatcher.
         if (sender == deviceWatcher)
         {
             IDLTesting::BluetoothLEDeviceDisplay bleDeviceDisplay = std::get<0>(FindBluetoothLEDevice(deviceInfoUpdate.Id()));
             if (bleDeviceDisplay != nullptr)
             {
-                // Device is already being displayed - update UX.
+                // Device is already known, update info
                 bleDeviceDisplay.Update(deviceInfoUpdate);
                 co_return;
             }
@@ -347,7 +316,7 @@ namespace winrt::IDLTesting::implementation
                 deviceInfo->Update(deviceInfoUpdate);
                 // If device has been updated with a friendly name it's no longer unknown.
                 if (!deviceInfo->Name().empty())
-                {
+                {                   
                     m_knownDevices.Append(make<BluetoothLEDeviceDisplay>(*deviceInfo));
                     UnknownDevices.erase(deviceInfo);
                 }
@@ -369,7 +338,7 @@ namespace winrt::IDLTesting::implementation
             auto [bleDeviceDisplay, index] = FindBluetoothLEDevice(deviceInfoUpdate.Id());
             if (bleDeviceDisplay != nullptr)
             {
-                m_knownDevices.RemoveAt(index);
+                m_knownDevices.RemoveAt(index);                
             }
 
             auto deviceInfo = FindUnknownDevices(deviceInfoUpdate.Id());
@@ -385,25 +354,20 @@ namespace winrt::IDLTesting::implementation
     {
 
         // Protect against race condition if the task runs after the app stopped the deviceWatcher.
-        //if (sender == deviceWatcher)
-        //{
-        //    rootPage.NotifyUser(to_hstring(m_knownDevices.Size()) + L" devices found. Enumeration completed.",
-        //        NotifyType::StatusMessage);
-        //}
-        printf("%i devices found. Enumeration completed.\n", m_knownDevices.Size());
+        if (sender == deviceWatcher)
+        {
+            printf("%i devices found. Enumeration completed.\n", m_knownDevices.Size());
+        }
         co_return;
     }
 
     fire_and_forget LiteWatcher::DeviceWatcher_Stopped(DeviceWatcher sender, IInspectable const&)
     {
-
-        //// Protect against race condition if the task runs after the app stopped the deviceWatcher.
-        //if (sender == deviceWatcher)
-        //{
-        //    rootPage.NotifyUser(L"No longer watching for devices.",
-        //        sender.Status() == DeviceWatcherStatus::Aborted ? NotifyType::ErrorMessage : NotifyType::StatusMessage);
-        //}
-        printf("No longer watching for devices.\n");
+        // Protect against race condition if the task runs after the app stopped the deviceWatcher.
+        if (sender == deviceWatcher)
+        {
+            printf("No longer watching for devices.\n");
+        }
         co_return;
     }
 

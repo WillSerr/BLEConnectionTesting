@@ -12,10 +12,12 @@ namespace winrt::IDLTesting::implementation
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::Foundation::IInspectable> KnownDevices() {
             return m_knownDevices;
         }
+       
+        bool BikeConnected();
+        bool BikeUpdated();
+        int16_t BikePower();
 
         void EnumerateButton_Click();
-        void PairButton_Click();
-        bool Not(bool value);
 
         bool SubscribeToPowerData(hstring const& Id);
         bool UnSubscribeToPowerData();
@@ -31,6 +33,7 @@ namespace winrt::IDLTesting::implementation
         event_token deviceWatcherStoppedToken;
 
         Windows::Devices::Bluetooth::BluetoothLEDevice bluetoothLeDevice{ nullptr };
+        winrt::IDLTesting::BluetoothLEDeviceDisplay bluetoothLeDeviceDisplay{ nullptr };
         Windows::Devices::Bluetooth::GenericAttributeProfile::GattCharacteristic selectedCharacteristic{ nullptr };
         void StartBleDeviceWatcher();
         void StopBleDeviceWatcher();

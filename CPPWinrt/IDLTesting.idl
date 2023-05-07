@@ -4,30 +4,19 @@
 
 // IDLTesting.idl
 namespace IDLTesting
-{
-    [default_interface]
-    runtimeclass Watcher : Windows.UI.Xaml.Controls.Page
-    {
-        Watcher();
-
-        Windows.Foundation.Collections.IObservableVector<Object> KnownDevices{ get; };
-
-        Windows.UI.Xaml.Controls.ListView ResultsListView{ get; };
-        void EnumerateButton_Click();
-        void PairButton_Click();
-        Boolean Not(Boolean value);
-    }
-    
+{  
     [default_interface]
     runtimeclass LiteWatcher
     {
         LiteWatcher();
 
         Windows.Foundation.Collections.IObservableVector<Object> KnownDevices{ get; };
+        
+        Boolean BikeConnected();
+        Boolean BikeUpdated();
+        Int16 BikePower();
 
         void EnumerateButton_Click();
-        void PairButton_Click();
-        Boolean Not(Boolean value);
         Boolean SubscribeToPowerData(String Id);
         Boolean UnSubscribeToPowerData();
     }
