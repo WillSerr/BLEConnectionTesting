@@ -15,7 +15,6 @@ WinsockHelper::~WinsockHelper()
     if (WSACloseEvent(ListenEvent) == false) {
         PrintError("WSACloseEvent() failed");
     }
-    //CleanupSocket();
 }
 
 int WinsockHelper::getClientCount()
@@ -171,27 +170,6 @@ using namespace Windows::Devices::Enumeration;
 using namespace Windows::Devices::Bluetooth;
 using namespace Windows::Devices::Bluetooth::GenericAttributeProfile;
 using namespace Windows::Foundation::Collections;
-
-
-void WinsockHelper::stopWatcherEnumerating()
-{
-    if (deviceWatcher != NULL){
-        if (enumerating) {
-            enumerating = false;
-            deviceWatcher->EnumerateButton_Click();
-        }
-    }   
-}
-
-void WinsockHelper::startWatcherEnumerating()
-{
-    if (deviceWatcher != NULL) {
-        if (!enumerating) {
-            enumerating = true;
-            deviceWatcher->EnumerateButton_Click();
-        }
-    }
-}
 
 void WinsockHelper::updateBikeList()
 {

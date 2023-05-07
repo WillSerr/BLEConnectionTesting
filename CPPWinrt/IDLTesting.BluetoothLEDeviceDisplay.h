@@ -68,10 +68,6 @@ namespace winrt::IDLTesting::implementation
             GattValueChangedEventArgs args);
         event_token NotifyToken;
         winrt::Windows::Devices::Bluetooth::GenericAttributeProfile::GattCharacteristic currentSubscribedCharacteristic{ nullptr };
-        //event<Windows::UI::Xaml::Data::PropertyChangedEventHandler> m_propertyChanged;
-
-        //void OnPropertyChanged(param::hstring const& property);
-        //bool LookupBooleanProperty(param::hstring const& property);
 
         bool updated = false;
         int16_t power = 0;

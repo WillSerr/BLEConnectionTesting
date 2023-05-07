@@ -29,17 +29,12 @@ public:
 		int powerValue = -1;
 	};
 
-
 	int getClientCount();
 
 	winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::Foundation::IInspectable>* devList;
 	winrt::IDLTesting::LiteWatcher* deviceWatcher;
 
 	std::string bikeIDToConnect = "NULL";
-
-	bool enumerating = true;
-	void stopWatcherEnumerating();
-	void startWatcherEnumerating();
 
 private:
 	void die(const char* message);
