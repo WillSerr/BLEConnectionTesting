@@ -44,6 +44,65 @@ namespace winrt::IDLTesting::implementation
                 if (status == Windows::Devices::Enumeration::DevicePairingResultStatus::AlreadyPaired) {
                     printf(" Already Paired.");
                 }
+                switch (status)
+                {
+                case winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::NotReadyToPair:
+                    printf(" NotReadyToPair.");
+                    break;
+                case winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::NotPaired:
+                    printf(" NotPaired.");
+                    break;
+                case winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::ConnectionRejected:
+                    printf(" ConnectionRejected.");
+                    break;
+                case winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::TooManyConnections:
+                    printf(" TooManyConnections.");
+                    break;
+                case winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::HardwareFailure:
+                    printf(" HardwareFailure.");
+                    break;
+                case winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::AuthenticationTimeout:
+                    printf(" AuthenticationTimeout.");
+                    break;
+                case winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::AuthenticationNotAllowed:
+                    printf(" AuthenticationNotAllowed.");
+                    break;
+                case winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::AuthenticationFailure:
+                    printf(" AuthenticationFailure.");
+                    break;
+                case winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::NoSupportedProfiles:
+                    printf(" NoSupportedProfiles.");
+                    break;
+                case winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::ProtectionLevelCouldNotBeMet:
+                    printf(" ProtectionLevelCouldNotBeMet.");
+                    break;
+                case winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::AccessDenied:
+                    printf(" AccessDenied.");
+                    break;
+                case winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::InvalidCeremonyData:
+                    printf(" InvalidCeremonyData.");
+                    break;
+                case winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::PairingCanceled:
+                    printf(" PairingCanceled.");
+                    break;
+                case winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::OperationAlreadyInProgress:
+                    printf(" OperationAlreadyInProgress.");
+                    break;
+                case winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::RequiredHandlerNotRegistered:
+                    printf(" RequiredHandlerNotRegistered.");
+                    break;
+                case winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::RejectedByHandler:
+                    printf(" RejectedByHandler.");
+                    break;
+                case winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::RemoteDeviceHasAssociation:
+                    printf(" RemoteDeviceHasAssociation.");
+                    break;
+                case winrt::Windows::Devices::Enumeration::DevicePairingResultStatus::Failed:
+                    printf(" Failed.");
+                    break;
+                default:
+                    break;
+                }
                 printf("\n");
             }
             

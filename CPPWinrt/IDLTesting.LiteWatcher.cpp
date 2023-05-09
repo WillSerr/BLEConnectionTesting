@@ -127,6 +127,7 @@ namespace winrt::IDLTesting::implementation
                                         selectedCharacteristic = chara;
                                         bluetoothLeDevice = newBluetoothLeDevice;
 
+
                                         return true;
 
                                         foundCharacteristic = true;
@@ -193,7 +194,13 @@ namespace winrt::IDLTesting::implementation
             }            
             return false;
         }
-        return false;        
+        if (selectedCharacteristic == nullptr && bluetoothLeDevice == nullptr) {
+            return true;
+        }
+        else {
+            printf("LiteWatcher: Unknown Error");
+            return false;
+        }
     }
 
     void LiteWatcher::StartBleDeviceWatcher()
