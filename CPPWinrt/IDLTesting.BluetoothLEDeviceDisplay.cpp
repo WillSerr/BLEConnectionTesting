@@ -108,7 +108,7 @@ namespace winrt::IDLTesting::implementation
             
 
             currentSubscribedCharacteristic = sender;
-            NotifyToken = sender.ValueChanged({ this, &BluetoothLEDeviceDisplay::characteristicNotification }); //As per microsoft docs https://learn.microsoft.com/en-us/windows/uwp/cpp-and-winrt-apis/handle-events
+            //NotifyToken = sender.ValueChanged({ this, &BluetoothLEDeviceDisplay::characteristicNotification }); //As per microsoft docs https://learn.microsoft.com/en-us/windows/uwp/cpp-and-winrt-apis/handle-events
         }
     }
 
@@ -132,7 +132,7 @@ namespace winrt::IDLTesting::implementation
             }
 
 
-            currentSubscribedCharacteristic.ValueChanged(NotifyToken);
+            //currentSubscribedCharacteristic.ValueChanged(NotifyToken);
             currentSubscribedCharacteristic = nullptr;
         }
     }

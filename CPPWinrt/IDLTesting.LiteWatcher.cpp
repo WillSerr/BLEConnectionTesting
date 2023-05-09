@@ -32,12 +32,20 @@ namespace winrt::IDLTesting::implementation
 
     bool LiteWatcher::BikeUpdated()
     {        
-        return bluetoothLeDeviceDisplay.Updated();
+        if (updated) {
+            updated = false;
+            return true;
+        }
+        else {
+            return false;
+        }
+        //return bluetoothLeDeviceDisplay.Updated();
     }
 
     int16_t LiteWatcher::BikePower()
     {
-        return bluetoothLeDeviceDisplay.Power();
+        return power;
+        //return bluetoothLeDeviceDisplay.Power();
     }
 
     void LiteWatcher::EnumerateButton_Click()
@@ -123,10 +131,11 @@ namespace winrt::IDLTesting::implementation
                                         printf("LiteWatcher: Subscribed to notification\n\n");
 
                                         bluetoothLeDeviceDisplay = std::get<0>(FindBluetoothLEDevice(Id));
-                                        bluetoothLeDeviceDisplay.NotifyOnCharacteristicChange(chara);
+                                        bluetoothLeDeviceDisplay.NotifyOnCharacteristicChange(chara);                                        
                                         selectedCharacteristic = chara;
                                         bluetoothLeDevice = newBluetoothLeDevice;
 
+                                        NotifyToken = selectedCharacteristic.ValueChanged({ this, &LiteWatcher::characteristicNotification }); //As per microsoft docs https://learn.microsoft.com/en-us/windows/uwp/cpp-and-winrt-apis/handle-events
 
                                         return true;
 
@@ -376,6 +385,50 @@ namespace winrt::IDLTesting::implementation
             printf("No longer watching for devices.\n");
         }
         co_return;
+    }
+
+    fire_and_forget LiteWatcher::characteristicNotification(GattCharacteristic sender, GattValueChangedEventArgs args)
+    {
+        //args.CharacteristicValue
+        auto dataReader = Windows::Storage::Streams::DataReader::FromBuffer(args.CharacteristicValue());
+        dataReader.ByteOrder(Windows::Storage::Streams::ByteOrder::LittleEndian);
+
+        //printf("Notification: ");       //Show that notification has been received
+        unsigned int bufflen = dataReader.UnconsumedBufferLength(); //get the size of the notification in bytes
+        //printf("byte count: %u ", bufflen);
+        //if (bufflen >= 4) {
+            updated = true;
+
+            uint8_t flags[2] = { 11,11 };
+            dataReader.ReadBytes(flags);
+            //printf("Flags:  %x %x \t", flags[0], flags[1]);
+            uint16_t newPower = dataReader.ReadUInt16();
+            power = newPower;
+            //printf("Instantaneous Power:  %u \t", power);
+
+            //if ((flags[0]>>7) & 1) {
+            //    printf("Pedal Power Balance in 0.5%s:  %u \t", dataReader.ReadByte()); // For double crank systems
+            //}
+            //if ((flags[0] >> 5) & 1) {
+            //    printf("Accumulated Torque :  %u \t", dataReader.ReadUInt16());
+            //}
+            //if ((flags[0] >> 3) & 1) {
+            //    printf("Cumulative Wheel Revolutions :  %u \t", dataReader.ReadUInt32());
+            //    printf("Last Wheel Event Time :  %u \t", dataReader.ReadUInt16());                
+            //}
+            //if ((flags[0] >> 2) & 1) {
+            //    printf("Cumulative Crank Revolutions :  %u \t", dataReader.ReadUInt16());
+            //    printf("Last Crank Event Time :  %u \t", dataReader.ReadUInt16());
+            //}
+            //etc, there are a lot of these. None of them are usefull but this approach can be copied if expanding into FTMS
+
+        //}
+        //else {
+        //    printf("The notification data is invalid");
+        //}
+        //printf("\n");
+
+        co_return;// fire_and_forget();
     }
 
 }

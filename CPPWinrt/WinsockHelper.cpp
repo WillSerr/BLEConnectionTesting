@@ -113,7 +113,7 @@ void WinsockHelper::sendErrorMessage(Errors errorType)
     messageHeader.type = MessageType::Error;
     //Send the message to the server.
     if (send(AcceptSocket, (char*)&messageHeader, sizeof(WinsockHelper::MessageHeader), 0) != sizeof(WinsockHelper::MessageHeader))
-    {
+    {        
         printf("Error message Header failed to send\n");
     }
 
@@ -212,6 +212,7 @@ void WinsockHelper::sendPowerMessage(uint32_t power)
     //Send the message to the server.
     if (send(AcceptSocket, (char*)&messageHeader, sizeof(WinsockHelper::MessageHeader), 0) != sizeof(WinsockHelper::MessageHeader))
     {
+        printf("WSAErrorCode: %i", WSAGetLastError());
         printf("Power message Header failed to send");
     }
 

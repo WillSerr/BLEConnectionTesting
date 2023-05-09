@@ -45,6 +45,13 @@ namespace winrt::IDLTesting::implementation
         fire_and_forget DeviceWatcher_Removed(Windows::Devices::Enumeration::DeviceWatcher sender, Windows::Devices::Enumeration::DeviceInformationUpdate deviceInfoUpdate);
         fire_and_forget DeviceWatcher_EnumerationCompleted(Windows::Devices::Enumeration::DeviceWatcher sender, Windows::Foundation::IInspectable const&);
         fire_and_forget DeviceWatcher_Stopped(Windows::Devices::Enumeration::DeviceWatcher sender, Windows::Foundation::IInspectable const&);
+
+        fire_and_forget characteristicNotification(Windows::Devices::Bluetooth::GenericAttributeProfile::GattCharacteristic sender,
+            Windows::Devices::Bluetooth::GenericAttributeProfile::GattValueChangedEventArgs args);
+        event_token NotifyToken;
+
+        bool updated = false;
+        int16_t power = 0;
     };
 }
 namespace winrt::IDLTesting::factory_implementation
