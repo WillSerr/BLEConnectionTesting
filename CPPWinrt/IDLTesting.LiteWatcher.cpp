@@ -130,8 +130,7 @@ namespace winrt::IDLTesting::implementation
                                         // Server has been informed of clients interest.
                                         printf("LiteWatcher: Subscribed to notification\n\n");
 
-                                        bluetoothLeDeviceDisplay = std::get<0>(FindBluetoothLEDevice(Id));
-                                        bluetoothLeDeviceDisplay.NotifyOnCharacteristicChange(chara);                                        
+                                        bluetoothLeDeviceDisplay = std::get<0>(FindBluetoothLEDevice(Id));                                
                                         selectedCharacteristic = chara;
                                         bluetoothLeDevice = newBluetoothLeDevice;
 
@@ -188,7 +187,6 @@ namespace winrt::IDLTesting::implementation
                 {
                     // Server has been informed of clients interest.
                     printf("LiteWatcher: UnSubscribed to notification\n\n");
-                    bluetoothLeDeviceDisplay.StopNotifyOnCharacteristicChange();
                     bluetoothLeDeviceDisplay = nullptr;
                     bluetoothLeDevice = nullptr;
                     selectedCharacteristic = nullptr;

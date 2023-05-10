@@ -33,14 +33,9 @@ namespace IDLTesting
         Boolean IsPaired{ get; };
         Boolean IsConnected{ get; };
         Boolean IsConnectable{ get; };
-        Boolean Updated{ get; };
-        Int16 Power{ get; };
 
         IMapView<String, Object> Properties{ get; };
 
         void Update(Windows.Devices.Enumeration.DeviceInformationUpdate deviceInfoUpdate);
-
-        void NotifyOnCharacteristicChange(Windows.Devices.Bluetooth.GenericAttributeProfile.GattCharacteristic sender);
-        void StopNotifyOnCharacteristicChange();
     };
 }

@@ -17,8 +17,6 @@ namespace winrt::IDLTesting::implementation
             return m_deviceInformation;
         }
 
-        bool Updated();
-
         hstring Id()
         {
             return m_deviceInformation.Id();
@@ -44,11 +42,6 @@ namespace winrt::IDLTesting::implementation
             return false;// LookupBooleanProperty(L"System.Devices.Aep.Bluetooth.Le.IsConnectable");
         }
 
-        int16_t Power()
-        {
-            updated = false;
-            return power;
-        }
 
         Windows::Foundation::Collections::IMapView<hstring, Windows::Foundation::IInspectable> Properties()
         {
@@ -58,18 +51,8 @@ namespace winrt::IDLTesting::implementation
         void Update(Windows::Devices::Enumeration::DeviceInformationUpdate const& deviceInfoUpdate);
 
 
-        void NotifyOnCharacteristicChange(winrt::Windows::Devices::Bluetooth::GenericAttributeProfile::GattCharacteristic const& sender);
-        
-        void StopNotifyOnCharacteristicChange();
-
     private:
         Windows::Devices::Enumeration::DeviceInformation m_deviceInformation{ nullptr };
-        fire_and_forget characteristicNotification(GattCharacteristic sender,
-            GattValueChangedEventArgs args);
-        event_token NotifyToken;
-        winrt::Windows::Devices::Bluetooth::GenericAttributeProfile::GattCharacteristic currentSubscribedCharacteristic{ nullptr };
 
-        bool updated = false;
-        int16_t power = 0;
     };
 }
